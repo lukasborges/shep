@@ -20,7 +20,7 @@ Press `+` and pick a service from the list, or type any address; either way, tha
 - **Every service works the same way.** Nothing in Shep knows one site from another, so there are no per-service scripts to go stale when a site changes. The one exception is Google's sign-in, which turns away a browser that states its Chrome version, so the request that carries it leaves the version out.
 - **The icon is the page's favicon**, as the page itself shows it. A service that marks news by changing its favicon, like Google Chat, shows it in the rail that way.
 - **The unread count comes from the page title**, the `(3)` most web apps put in front of it. A title that says there is something without a number, `(•)`, draws a dot.
-- **Links stay in the app.** A link to another site opens in a window of Shep's that shares the service's session, so it is already signed in. When a sign-in there finishes back on the service, the window closes and the service carries on. Open Link in Browser is on the right click.
+- **Links stay in the app.** A link to another site opens in a window of Shep's that shares the service's session, so it is already signed in. When a sign-in there finishes back on the service, the window closes and the service carries on. A link to the site of another service you added opens in that service instead, brought forward with its workspace. Open Link in Browser is on the right click.
 - **Pages see a browser**: the Chromium Shep is built on, with nothing of Shep or Electron in its user agent, which is what sign-ins and captchas check for.
 - **The page in view is driven from the title bar**: back, forward, reload, home to the address it was added with, and find. A zoom other than 100% shows there too, and a click puts it back.
 - **The service itself is on its right click in the rail**: reload, notifications, sound, disable, edit, move to a workspace, remove.
@@ -32,6 +32,8 @@ Shep also has a do-not-disturb switch, a lock screen with a password, an icon in
 ## Install
 
 [Releases](https://github.com/lukasborges/shep/releases) carry an AppImage, a deb and a tarball for x86-64 Linux, an installer and a zip for x86-64 Windows, and a disk image and a zip for Macs with Apple silicon or Intel. Shep updates itself from those releases on Linux and Windows; on a Mac, Check for Updates opens the latest release.
+
+Shep 1.0 is a new app and starts from a clean profile. Services added in 0.10 have to be added again.
 
 ### Linux
 
@@ -45,9 +47,7 @@ Neither is signed, because a certificate costs money this app does not have. The
 
 ### macOS
 
-Open the disk image and drag Shep to Applications. It is not signed with a Developer ID or notarised by Apple, for the same reason, so the first time it opens macOS refuses it: open **System Settings › Privacy & Security** and choose **Open Anyway** beside Shep. That is also why a Mac does not update it by itself, since macOS installs updates only for a signed app.
-
-Shep 1.0 is a new app and starts from a clean profile. Services added in 0.10 have to be added again.
+Take `Shep-<version>-mac-arm64.dmg` for a Mac with Apple silicon, `Shep-<version>-mac-x64.dmg` for one with Intel; the zips are the same app. Open the disk image and drag Shep to Applications. It is not signed with a Developer ID or notarised by Apple, for the same reason, so the first time it opens macOS refuses it: open **System Settings › Privacy & Security** and choose **Open Anyway** beside Shep. That is also why a Mac does not update it by itself, since macOS installs updates only for a signed app.
 
 ## Keyboard
 
