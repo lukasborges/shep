@@ -156,6 +156,31 @@ test('hands a sign-in back to the address the service was added with, though its
 	}
 });
 
+test('opens a link to another service\'s site in that service, showing its workspace, not in a window', async () => {
+	let other: Shep | undefined;
+	try {
+		other = await launchShep({
+			store: {
+				services: [serviceRecord('1', at('127.0.0.1', '/service.html')), serviceRecord('2', at('localhost', '/away.html'), { workspace: 'elsewhere' })],
+				workspaces: [{ id: 'here', name: 'Here', hue: 'green', icon: null }, { id: 'elsewhere', name: 'Elsewhere', hue: 'blue', icon: null }],
+				activeWorkspace: 'here',
+				activeServiceId: '1'
+			}
+		});
+		const app = other;
+		const meeting = at('localhost', '/away.html?meeting');
+		await expect.poll(() => app.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL() === url && !contents.isLoading()), at('127.0.0.1', '/service.html'))).toBe(true);
+		await inService(app, at('127.0.0.1', '/service.html'), `window.open(${JSON.stringify(meeting)}), null`);
+		await expect.poll(() => app.app.evaluate(({ webContents }, meeting) => webContents.getAllWebContents().some(contents => contents.getURL() === meeting), meeting)).toBe(true);
+		const active = await app.window.evaluate(() => window.shep.invoke('services:list')) as ServiceState[];
+		expect(active.find(service => service.active)?.id).toBe('2');
+		expect(await app.window.evaluate(() => window.shep.invoke('app:state').then(state => (state as { activeWorkspace: string }).activeWorkspace))).toBe('elsewhere');
+		expect(await app.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
+	} finally {
+		await closeShep(other);
+	}
+});
+
 test('keeps running when a removed service\'s page asks for something after it is gone', async () => {
 	let other: Shep | undefined;
 	try {

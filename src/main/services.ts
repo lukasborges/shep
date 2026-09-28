@@ -9,6 +9,7 @@ import { faviconFor } from './favicon.ts';
 import { followColorScheme } from './theme.ts';
 import { applyPermissionPolicy } from './permissions.ts';
 import { keepLinksInTheApp } from './auxiliary.ts';
+import { serviceOwningLink } from './links.ts';
 import { attachPageMenu } from './menus.ts';
 import { serviceMenu } from './servicemenu.ts';
 import { NOTIFICATION_WRAPPER } from './notifications.ts';
@@ -323,6 +324,18 @@ export class ServiceHost {
 		return store.get('services').find(service => service.id === id);
 	}
 
+	private openInOwningService(openerId: string, url: string): boolean {
+		const owner = serviceOwningLink(store.get('services').filter(service => service.enabled), openerId, url);
+		const contents = owner ? this.running.get(owner.id)?.view.webContents : undefined;
+		if ( !owner || !contents ) return false;
+		contents.loadURL(url).catch(() => {});
+		if ( !isShownIn(owner.workspace, store.get('activeWorkspace')) ) store.set('activeWorkspace', owner.workspace);
+		this.activate(owner.id);
+		// the link may have come from an auxiliary window, which would stay in front
+		this.window.focus();
+		return true;
+	}
+
 	private layout(): void {
 		const [width = 0, height = 0] = this.window.getContentSize();
 		const contentArea = { x: RAIL_WIDTH, y: TITLE_BAR_HEIGHT, width: Math.max(0, width - RAIL_WIDTH), height: Math.max(0, height - TITLE_BAR_HEIGHT) };
@@ -372,7 +385,7 @@ export class ServiceHost {
 		if ( userAgent ) contents.setUserAgent(userAgent);
 		followColorScheme(contents);
 		attachPageMenu(contents);
-		keepLinksInTheApp(contents, contents, () => this.existing(record.id)?.url ?? '');
+		keepLinksInTheApp(contents, contents, () => this.existing(record.id)?.url ?? '', url => this.openInOwningService(record.id, url));
 		this.applyMute(record.id);
 		contents.on('dom-ready', () => {
 			contents.executeJavaScript(NOTIFICATION_WRAPPER).catch(() => {});

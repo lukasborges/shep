@@ -38,11 +38,12 @@ function handBackSignIns(window: BrowserWindow, serviceContents: WebContents, se
 	window.webContents.on('will-redirect', (event) => returnToService(event, event.url));
 }
 
-export function keepLinksInTheApp(contents: WebContents, serviceContents: WebContents, serviceAddress: () => string): void {
+export function keepLinksInTheApp(contents: WebContents, serviceContents: WebContents, serviceAddress: () => string, openInOwningService: (url: string) => boolean): void {
 	const popupFlagsInOpenOrder: boolean[] = [];
 
 	contents.setWindowOpenHandler(({ url, features }) => {
 		const kind = classifyWindowOpen(url, features);
+		if ( kind === 'window' && openInOwningService(url) ) return { action: 'deny' };
 		const openedAsPopup = kind === 'popup' || (kind === 'blank' && isPopupRequested(features));
 		if ( kind === 'blank' || kind === 'popup' || kind === 'window' ) popupFlagsInOpenOrder.push(openedAsPopup);
 		switch ( kind ) {
@@ -66,7 +67,7 @@ export function keepLinksInTheApp(contents: WebContents, serviceContents: WebCon
 		const openedAsPopup = popupFlagsInOpenOrder.shift() ?? false;
 		attachPageMenu(window.webContents);
 		followColorScheme(window.webContents);
-		keepLinksInTheApp(window.webContents, serviceContents, serviceAddress);
+		keepLinksInTheApp(window.webContents, serviceContents, serviceAddress, openInOwningService);
 		if ( !openedAsPopup ) handBackSignIns(window, serviceContents, serviceAddress, details.url);
 		const isHiddenBlankWindow = isBlank(details.url) && details.options.show === false;
 		if ( isHiddenBlankWindow ) showOnceWrittenIntoOrNavigated(window);

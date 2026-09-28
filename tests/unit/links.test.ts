@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyWindowOpen, isPopupRequested, isReturnToService } from '../../src/main/links.ts';
+import { classifyWindowOpen, isPopupRequested, isReturnToService, serviceOwningLink } from '../../src/main/links.ts';
 
 test('a link to any site opens in an auxiliary window, not the browser', () => {
 	assert.equal(classifyWindowOpen('https://example.com/article', ''), 'window');
@@ -63,4 +63,22 @@ test('hands back a sign-in that ends at the address the service was added with, 
 	const service = ['https://workspace.google.com/products/chat/', 'https://chat.google.com/'];
 	assert.equal(isReturnToService(service, 'https://accounts.google.com/v3/signin', 'https://chat.google.com/u/0/'), true);
 	assert.equal(isReturnToService(service, 'https://chat.google.com/u/0/', 'https://chat.google.com/u/0/app'), false);
+});
+
+const calendar = { id: '1', url: 'https://calendar.google.com/calendar/u/0/r' };
+const meet = { id: '2', url: 'https://meet.google.com/' };
+
+test('a link to the site another service was added on opens in that service', () => {
+	assert.equal(serviceOwningLink([calendar, meet], '1', 'https://meet.google.com/pbk-hzeu-ehu'), meet);
+});
+
+test('a link to no service\'s site, or to the opener\'s own, is not handed to a service', () => {
+	assert.equal(serviceOwningLink([calendar, meet], '1', 'https://docs.google.com/document/d/1'), null);
+	assert.equal(serviceOwningLink([calendar, meet], '2', 'https://meet.google.com/pbk-hzeu-ehu'), null);
+	assert.equal(serviceOwningLink([calendar, meet], '1', 'not a url'), null);
+});
+
+test('two services on the link\'s site cannot say which account it is for', () => {
+	const otherMeet = { id: '3', url: 'https://meet.google.com/?authuser=1' };
+	assert.equal(serviceOwningLink([calendar, meet, otherMeet], '1', 'https://meet.google.com/pbk-hzeu-ehu'), null);
 });

@@ -68,3 +68,12 @@ export function isReturnToService(serviceUrls: readonly string[], fromUrl: strin
 	if ( !services.length || isOpaqueOrUnparsable(from) ) return false;
 	return services.includes(originOf(toUrl)) && !services.includes(from);
 }
+
+export function serviceOwningLink<T extends { id: string; url: string }>(services: readonly T[], openerId: string, url: string): T | null {
+	const target = originOf(url);
+	if ( !target || target === 'null' ) return null;
+	const onTheSite = services.filter(service => originOf(service.url) === target);
+	// a link to the opener's own site is the opener's, and two services there, two accounts of one mail, cannot say which is meant
+	if ( onTheSite.some(service => service.id === openerId) || onTheSite.length !== 1 ) return null;
+	return onTheSite[0] ?? null;
+}
