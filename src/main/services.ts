@@ -5,7 +5,7 @@ import { nameFromUrl, normalizeUrl } from '../shared/address.ts';
 import type { Navigation, ServiceRecord, ServiceState, UnreadCount } from '../shared/service.ts';
 import { preferences, store, updateService } from './store.ts';
 import { countFromTitle, createBlinkGuard, totalUnread } from './unread.ts';
-import { faviconFor } from './favicon.ts';
+import { faviconFor, ICONS_BEYOND_FAVICONS } from './favicon.ts';
 import { followColorScheme } from './theme.ts';
 import { applyPermissionPolicy } from './permissions.ts';
 import { keepLinksInTheApp } from './auxiliary.ts';
@@ -403,7 +403,7 @@ export class ServiceHost {
 			blinkGuard.fromTitle(countFromTitle(title));
 		});
 		contents.on('page-favicon-updated', (event, favicons) => {
-			faviconFor(favicons, url => contents.session.fetch(url)).then(favicon => {
+			faviconFor(favicons, url => contents.session.fetch(url), () => contents.executeJavaScript(ICONS_BEYOND_FAVICONS)).then(favicon => {
 				const current = this.existing(record.id);
 				if ( !favicon || !current || favicon === current.favicon ) return;
 				updateService(record.id, { favicon });

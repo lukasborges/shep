@@ -18,7 +18,8 @@ test.beforeAll(async () => {
 		store: {
 			services: [
 				serviceRecord('1', serviceUrl()),
-				serviceRecord('2', at('127.0.0.1', '/away.html'), { media: true })
+				serviceRecord('2', at('127.0.0.1', '/away.html'), { media: true }),
+				serviceRecord('3', at('[::1]', '/blurry.html'))
 			],
 			activeServiceId: '1'
 		}
@@ -55,16 +56,23 @@ test('counts unread from the page title and shows the active service instead of 
 	await inFixture('document.title = "Fixture service"');
 });
 
-test('wears the sharpest small favicon the page lists, fetched through its session', async () => {
-	await expect.poll(async () => (await list()).find(service => service.id === '1')?.favicon ?? '').toMatch(/^data:image\/png;base64,/);
-	const width = await shep.window.evaluate(async () => {
-		const state = (await window.shep.invoke('services:list') as { id: string; favicon: string }[]).find(service => service.id === '1');
+const faviconWidth = async (id: string) => {
+	await expect.poll(async () => (await list()).find(service => service.id === id)?.favicon ?? '').toMatch(/^data:image\/png;base64,/);
+	return shep.window.evaluate(async id => {
+		const state = (await window.shep.invoke('services:list') as { id: string; favicon: string }[]).find(service => service.id === id);
 		const image = new Image();
 		image.src = state?.favicon ?? '';
 		await image.decode();
 		return image.naturalWidth;
-	});
-	expect(width).toBe(64);
+	}, id);
+};
+
+test('wears the sharpest small favicon the page lists, fetched through its session', async () => {
+	expect(await faviconWidth('1')).toBe(64);
+});
+
+test('wears an icon from the manifest when every favicon the page lists is blurry', async () => {
+	await expect.poll(() => faviconWidth('3')).toBe(64);
 });
 
 test('tells the service page the app\'s theme, which embedded content is not told on its own', async () => {

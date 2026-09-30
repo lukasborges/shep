@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 
-const TYPES: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.png': 'image/png' };
+const TYPES: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.json': 'application/json' };
 
 // Three origins from one server, 127.0.0.1, localhost and [::1], which a sign-in round trip needs.
 // /go?to= redirects, as a signed-out service does to a page on another site.

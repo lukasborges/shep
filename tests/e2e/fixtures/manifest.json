@@ -1,0 +1,7 @@
+{
+	"name": "Blurry favicon",
+	"icons": [
+		{ "src": "/icon-64.png", "sizes": "64x64", "type": "image/png" },
+		{ "src": "/icon-16.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+	]
+}
