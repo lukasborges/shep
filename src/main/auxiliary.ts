@@ -1,5 +1,5 @@
 import { shell, type BrowserWindow, type WebContents } from 'electron';
-import { classifyWindowOpen, isBlank, isPopupRequested, isReturnToService } from './links.ts';
+import { classifyWindowOpen, createModifiedClickWatch, isBlank, isPopupRequested, isReturnToService } from './links.ts';
 import { followColorScheme } from './theme.ts';
 import { attachPageMenu } from './menus.ts';
 
@@ -40,9 +40,15 @@ function handBackSignIns(window: BrowserWindow, serviceContents: WebContents, se
 
 export function keepLinksInTheApp(contents: WebContents, serviceContents: WebContents, serviceAddress: () => string, openInOwningService: (url: string) => boolean): void {
 	const popupFlagsInOpenOrder: boolean[] = [];
+	const clicks = createModifiedClickWatch(process.platform);
+	contents.on('before-input-event', (event, input) => clicks.keyboard(input));
+	contents.on('blur', () => clicks.focusLost());
+	contents.on('input-event', (event, input) => {
+		if ( input.type === 'mouseDown' ) clicks.mouseDown((input as Electron.MouseInputEvent).button ?? 'left');
+	});
 
-	contents.setWindowOpenHandler(({ url, features }) => {
-		const kind = classifyWindowOpen(url, features);
+	contents.setWindowOpenHandler(({ url, features, disposition }) => {
+		const kind = classifyWindowOpen(url, features, disposition, clicks.takeModifiedClick());
 		if ( kind === 'window' && openInOwningService(url) ) return { action: 'deny' };
 		const openedAsPopup = kind === 'popup' || (kind === 'blank' && isPopupRequested(features));
 		if ( kind === 'blank' || kind === 'popup' || kind === 'window' ) popupFlagsInOpenOrder.push(openedAsPopup);
@@ -54,6 +60,7 @@ export function keepLinksInTheApp(contents: WebContents, serviceContents: WebCon
 				return { action: 'allow' };
 			case 'window':
 				return { action: 'allow', overrideBrowserWindowOptions: AUXILIARY_WINDOW_OPTIONS };
+			case 'browser':
 			case 'external':
 				shell.openExternal(url);
 				return { action: 'deny' };

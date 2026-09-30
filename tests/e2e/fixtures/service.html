@@ -5,4 +5,5 @@
 <link rel="icon" sizes="64x64" href="/icon-64.png">
 <body>
 	<a id="elsewhere" href="/away.html" target="_blank">elsewhere</a>
+	<a id="later" href="/away.html?later" onclick="event.preventDefault(); setTimeout(() => window.open(this.href), 300)">later</a>
 </body>

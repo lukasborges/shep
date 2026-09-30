@@ -1,4 +1,4 @@
-export type WindowOpenKind = 'blank' | 'popup' | 'window' | 'external' | 'drop';
+export type WindowOpenKind = 'blank' | 'popup' | 'window' | 'browser' | 'external' | 'drop';
 
 const BLANK = ['about:blank', 'about:blank#blocked'];
 const HANDED_TO_THE_SYSTEM = ['mailto:', 'tel:'];
@@ -36,7 +36,43 @@ export function isPopupRequested(features: string | undefined): boolean {
 	return true;
 }
 
-export function classifyWindowOpen(url: string, features: string | undefined): WindowOpenKind {
+// Ctrl+click, ⌘+click on a Mac and the middle button, also when the page's own script opens the link.
+// Ctrl+Shift+click is left out: Chromium reports it as a plain click on a target="_blank" link.
+const OPENED_IN_A_BACKGROUND_TAB = 'background-tab';
+
+export const CLICK_OPENS_A_LINK_WITHIN_MS = 2000;
+
+export interface HeldModifiers {
+	control: boolean;
+	meta: boolean;
+}
+
+// Meet opens its chat's links a while after the click, and by then Chromium no longer ties the window to the Ctrl held for it.
+// Mouse events arrive without their modifiers, so the key held is read from the keyboard's own events.
+export function createModifiedClickWatch(platform: NodeJS.Platform, now: () => number = Date.now) {
+	let modifierHeld = false;
+	let modifiedClickAt = -Infinity;
+	return {
+		keyboard(input: HeldModifiers): void {
+			modifierHeld = platform === 'darwin' ? input.meta : input.control;
+		},
+		// the focus leaving takes the key's release with it
+		focusLost(): void {
+			modifierHeld = false;
+		},
+		mouseDown(button: string): void {
+			modifiedClickAt = modifierHeld || button === 'middle' ? now() : -Infinity;
+		},
+		// a click opens one link, so the first window asked for after it takes it
+		takeModifiedClick(): boolean {
+			const follows = now() - modifiedClickAt <= CLICK_OPENS_A_LINK_WITHIN_MS;
+			modifiedClickAt = -Infinity;
+			return follows;
+		}
+	};
+}
+
+export function classifyWindowOpen(url: string, features: string | undefined, disposition?: string, followsModifiedClick = false): WindowOpenKind {
 	if ( isBlank(url) ) return 'blank';
 
 	let target: URL;
@@ -48,7 +84,8 @@ export function classifyWindowOpen(url: string, features: string | undefined): W
 	if ( HANDED_TO_THE_SYSTEM.includes(target.protocol) ) return 'external';
 	if ( target.protocol !== 'http:' && target.protocol !== 'https:' ) return 'drop';
 
-	return isPopupRequested(features) ? 'popup' : 'window';
+	if ( isPopupRequested(features) ) return 'popup';
+	return disposition === OPENED_IN_A_BACKGROUND_TAB || followsModifiedClick ? 'browser' : 'window';
 }
 
 function originOf(url: string): string | null {

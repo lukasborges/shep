@@ -113,6 +113,45 @@ test('opens a link to another site in a window of the app that shares the servic
 	await shep.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(window => window.webContents.getURL().endsWith('/away.html'))?.close());
 });
 
+const ctrlClick = async (id: string) => {
+	const { x, y } = await inFixture<{ x: number; y: number }>(`(({ x, y }) => ({ x: x + 5, y: y + 5 }))(document.getElementById(${JSON.stringify(id)}).getBoundingClientRect())`);
+	await shep.app.evaluate(({ webContents }, { url, x, y }) => {
+		const contents = webContents.getAllWebContents().find(candidate => candidate.getURL() === url);
+		const [keyCode, modifier] = process.platform === 'darwin' ? ['Meta', 'meta'] as const : ['Control', 'control'] as const;
+		const modifiers = [modifier];
+		contents?.focus();
+		contents?.sendInputEvent({ type: 'keyDown', keyCode, modifiers });
+		contents?.sendInputEvent({ type: 'mouseDown', x, y, button: 'left', clickCount: 1, modifiers });
+		contents?.sendInputEvent({ type: 'mouseUp', x, y, button: 'left', clickCount: 1, modifiers });
+		contents?.sendInputEvent({ type: 'keyUp', keyCode, modifiers: [] });
+	}, { url: serviceUrl(), x, y });
+};
+
+const openedInTheBrowser = () => shep.app.evaluate(() => (globalThis as { opened?: string[] }).opened);
+
+test.describe('links clicked with Ctrl, or ⌘ on a Mac', () => {
+	test.beforeAll(async () => {
+		await shep.app.evaluate(({ shell }) => {
+			const opened: string[] = [];
+			(globalThis as { opened?: string[] }).opened = opened;
+			shell.openExternal = async url => { opened.push(url); };
+		});
+	});
+
+	test('open in the browser, though another service owns their site', async () => {
+		await ctrlClick('elsewhere');
+		await expect.poll(openedInTheBrowser).toContain(at('127.0.0.1', '/away.html'));
+		expect(await shep.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
+		expect((await list()).find(service => service.active)?.id).toBe('1');
+	});
+
+	test('open in the browser when the page opens them a while after the click, as Meet does', async () => {
+		await ctrlClick('later');
+		await expect.poll(openedInTheBrowser).toContain(at('127.0.0.1', '/away.html?later'));
+		expect(await shep.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
+	});
+});
+
 test('hands a sign-in that left the service back to the service\'s own page, and closes its window', async () => {
 	await inFixture(`window.open(${JSON.stringify(at('localhost', '/away.html'))}), null`);
 	await expect.poll(() => shep.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().some(window => window.webContents.getURL().includes('localhost')))).toBe(true);

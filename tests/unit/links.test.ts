@@ -1,10 +1,89 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyWindowOpen, isPopupRequested, isReturnToService, serviceOwningLink } from '../../src/main/links.ts';
+import { classifyWindowOpen, CLICK_OPENS_A_LINK_WITHIN_MS, createModifiedClickWatch, isPopupRequested, isReturnToService, serviceOwningLink } from '../../src/main/links.ts';
 
 test('a link to any site opens in an auxiliary window, not the browser', () => {
 	assert.equal(classifyWindowOpen('https://example.com/article', ''), 'window');
 	assert.equal(classifyWindowOpen('https://mail.google.com/mail/u/0/#inbox/1', ''), 'window');
+});
+
+test('a link opened with Ctrl, ⌘ or the middle button goes to the browser', () => {
+	assert.equal(classifyWindowOpen('https://example.com/article', '', 'background-tab'), 'browser');
+	assert.equal(classifyWindowOpen('https://example.com/article', '', 'foreground-tab'), 'window');
+	assert.equal(classifyWindowOpen('https://example.com/article', '', 'new-window'), 'window');
+});
+
+test('a link a page opens a while after a Ctrl+click goes to the browser too', () => {
+	assert.equal(classifyWindowOpen('https://example.com/article', '', 'foreground-tab', true), 'browser');
+	assert.equal(classifyWindowOpen('https://accounts.google.com/o/oauth2/auth', 'width=500,height=600', 'foreground-tab', true), 'popup');
+});
+
+const watching = (platform: NodeJS.Platform) => {
+	let time = 0;
+	const watch = createModifiedClickWatch(platform, () => time);
+	return { watch, wait: (ms: number) => { time += ms; } };
+};
+const held = (control: boolean, meta = false) => ({ control, meta });
+
+test('remembers a click made with Ctrl held, for as long as a page takes to open its link', () => {
+	const { watch, wait } = watching('linux');
+	watch.keyboard(held(true));
+	watch.mouseDown('left');
+	watch.keyboard(held(false));
+	wait(CLICK_OPENS_A_LINK_WITHIN_MS);
+	assert.equal(watch.takeModifiedClick(), true);
+});
+
+test('forgets a Ctrl+click it waited on too long', () => {
+	const { watch, wait } = watching('linux');
+	watch.keyboard(held(true));
+	watch.mouseDown('left');
+	wait(CLICK_OPENS_A_LINK_WITHIN_MS + 1);
+	assert.equal(watch.takeModifiedClick(), false);
+});
+
+test('sends one link to the browser for each Ctrl+click, and the next window the page opens stays in the app', () => {
+	const { watch } = watching('linux');
+	watch.keyboard(held(true));
+	watch.mouseDown('left');
+	assert.equal(watch.takeModifiedClick(), true);
+	assert.equal(watch.takeModifiedClick(), false);
+});
+
+test('forgets a Ctrl+click as soon as a plain click follows it', () => {
+	const { watch } = watching('linux');
+	watch.keyboard(held(true));
+	watch.mouseDown('left');
+	watch.keyboard(held(false));
+	watch.mouseDown('left');
+	assert.equal(watch.takeModifiedClick(), false);
+});
+
+test('counts the middle button, and Command rather than Control on a Mac', () => {
+	const linux = watching('linux').watch;
+	linux.mouseDown('middle');
+	assert.equal(linux.takeModifiedClick(), true);
+	const mac = watching('darwin').watch;
+	mac.keyboard(held(true));
+	mac.mouseDown('left');
+	assert.equal(mac.takeModifiedClick(), false);
+	mac.keyboard(held(false, true));
+	mac.mouseDown('left');
+	assert.equal(mac.takeModifiedClick(), true);
+});
+
+test('lets go of a Ctrl whose release the page never saw, because the focus left', () => {
+	const { watch } = watching('linux');
+	watch.keyboard(held(true));
+	watch.focusLost();
+	watch.mouseDown('left');
+	assert.equal(watch.takeModifiedClick(), false);
+});
+
+test('a popup opened with Ctrl stays a popup, since its opener waits on it', () => {
+	assert.equal(classifyWindowOpen('https://accounts.google.com/o/oauth2/auth', 'width=500,height=600', 'background-tab'), 'popup');
+	assert.equal(classifyWindowOpen('about:blank', '', 'background-tab'), 'blank');
+	assert.equal(classifyWindowOpen('slack://channel?team=T1', '', 'background-tab'), 'drop');
 });
 
 test('a sized window.open stays a popup, which an OAuth opener waits on', () => {
