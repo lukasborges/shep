@@ -23,6 +23,7 @@ import { WORKSPACE_ICONS } from '../shared/workspace.ts';
 import { NAVIGATIONS } from '../shared/service.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '../shared/preferences.ts';
 import { shortcutFor, type KeyInput, type ShortcutAction } from './shortcuts.ts';
+import { setWorkspaceImages } from './workspaceimages.ts';
 import type { AppState } from '../shared/channels.ts';
 
 // The default, not setUserAgent per page: Cloudflare Turnstile fails any overridden
@@ -84,6 +85,7 @@ if ( !app.requestSingleInstanceLock() ) {
 
 	handle('workspaces:menu', () => workspaces?.showMenu());
 	handle('workspaces:save', (event, id, name) => workspaces?.save(typeof id === 'string' ? id : null, text(name)));
+	handle('workspaces:images', (event, images) => setWorkspaceImages(images, store.get('workspaces').map(workspace => workspace.id)));
 	handle('workspaces:get', (event, id) => store.get('workspaces').find(workspace => workspace.id === text(id)) ?? null);
 	handle('workspaces:setIcon', (event, id, icon) => {
 		const chosen = WORKSPACE_ICONS.find(candidate => candidate === icon) ?? null;

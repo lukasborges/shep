@@ -61,6 +61,37 @@ test('keeps a hidden service counting, and marks the switcher when it has someth
 	await expect(shep.window.locator('.switcher .dot')).toHaveCount(0, { timeout: 5000 });
 });
 
+// The template the switcher's native menu is built from, with what each item's image holds, since a native menu cannot be looked at on Xvfb.
+const switcherMenu = () => shep.app.evaluate(async ({ Menu, BrowserWindow }) => {
+	const build = Menu.buildFromTemplate;
+	let template: Electron.MenuItemConstructorOptions[] = [];
+	Menu.buildFromTemplate = items => {
+		template = items as Electron.MenuItemConstructorOptions[];
+		return { popup: () => {} } as unknown as Electron.Menu;
+	};
+	await BrowserWindow.getAllWindows()[0]?.webContents.executeJavaScript('window.shep.invoke("workspaces:menu")');
+	Menu.buildFromTemplate = build;
+	return template.filter(item => item.type === 'radio').map(item => {
+		const image = item.icon as Electron.NativeImage | undefined;
+		return { label: item.label, size: image?.getSize(), scales: image?.getScaleFactors(), pixels: image?.toDataURL({ scaleFactor: 2 }) ?? '' };
+	});
+});
+
+test('draws each workspace\'s avatar beside its name in the switcher\'s menu, sharp on a 2x screen', async () => {
+	await expect.poll(async () => (await switcherMenu()).every(item => item.pixels)).toBe(true);
+	const items = await switcherMenu();
+	expect(items.map(item => item.label)).toEqual(['Work', 'Personal', 'All Services']);
+	for ( const item of items ) {
+		expect(item.size).toEqual({ width: 16, height: 16 });
+		expect(item.scales).toEqual([2]);
+	}
+	expect(new Set(items.map(item => item.pixels)).size).toBe(3);
+
+	const before = items[0]?.pixels;
+	await shep.window.evaluate(() => window.shep.invoke('workspaces:setIcon', 'w1', 'rocket'));
+	await expect.poll(async () => (await switcherMenu())[0]?.pixels).not.toBe(before);
+});
+
 test('gives All Services the number after the last workspace', async () => {
 	await press('3', [COMMAND, 'alt']);
 	await expect.poll(async () => (await state()).activeWorkspace).toBe(null);

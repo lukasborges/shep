@@ -1,4 +1,5 @@
 import type { ActiveWorkspace, Workspace } from '../shared/workspace.ts';
+import type { NativeImage } from 'electron';
 import type { Messages } from '../shared/i18n/index.ts';
 
 export interface WorkspaceMenuActions {
@@ -14,19 +15,20 @@ export interface WorkspaceMenuItem {
 	type?: 'separator' | 'radio';
 	checked?: boolean;
 	accelerator?: string;
+	icon?: NativeImage | string;
 	click?: () => void;
 }
 
 const SEPARATOR: WorkspaceMenuItem = { type: 'separator' };
 const NUMBERED_SHORTCUTS = 9;
 
-export function workspaceMenu(workspaces: readonly Workspace[], active: ActiveWorkspace, actions: WorkspaceMenuActions, messages: Messages): WorkspaceMenuItem[] {
+export function workspaceMenu(workspaces: readonly Workspace[], active: ActiveWorkspace, actions: WorkspaceMenuActions, messages: Messages, imageOf: (id: ActiveWorkspace) => NativeImage | string | undefined = () => undefined): WorkspaceMenuItem[] {
 	const shortcut = (index: number) => index < NUMBERED_SHORTCUTS ? `CommandOrControl+Alt+${index + 1}` : undefined;
 	const choices: WorkspaceMenuItem[] = [
 		...workspaces.map((workspace, index) => ({
-			label: workspace.name, type: 'radio' as const, checked: workspace.id === active, accelerator: shortcut(index), click: () => actions.choose(workspace.id)
+			label: workspace.name, type: 'radio' as const, checked: workspace.id === active, accelerator: shortcut(index), icon: imageOf(workspace.id), click: () => actions.choose(workspace.id)
 		})),
-		{ label: messages['menu.allServices'], type: 'radio', checked: active === null, accelerator: shortcut(workspaces.length), click: () => actions.choose(null) }
+		{ label: messages['menu.allServices'], type: 'radio', checked: active === null, accelerator: shortcut(workspaces.length), icon: imageOf(null), click: () => actions.choose(null) }
 	];
 	const managing: WorkspaceMenuItem[] = [{ label: messages['menu.newWorkspace'], click: actions.create }];
 	if ( active !== null ) {

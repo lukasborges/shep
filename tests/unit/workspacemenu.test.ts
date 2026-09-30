@@ -16,3 +16,13 @@ test('lists the workspaces with their shortcuts, then All Services, then what ca
 test('offers nothing to rename or delete under All Services, which is not a workspace', () => {
 	assert.deepEqual(describe(null), ['Work CommandOrControl+Alt+1', 'Personal CommandOrControl+Alt+2', 'All Services ✓ CommandOrControl+Alt+3', '---', 'New Workspace…']);
 });
+
+test('puts each workspace\'s image beside its name, and the grid beside All Services', () => {
+	const images = workspaceMenu(workspaces, 'w1', actions, en, id => `image of ${id ?? 'all'}`).map(item => item.icon);
+	assert.deepEqual(images.slice(0, 3), ['image of w1', 'image of w2', 'image of all']);
+	assert.equal(images.slice(3).some(Boolean), false);
+});
+
+test('leaves a workspace without an image until the interface has drawn one', () => {
+	assert.equal(workspaceMenu(workspaces, 'w1', actions, en).some(item => item.icon), false);
+});

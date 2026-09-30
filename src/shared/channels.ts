@@ -6,7 +6,7 @@ export const INVOKE_CHANNELS = [
 	'service:navigate', 'service:resetZoom', 'service:find', 'service:stopFind',
 	'overlay:open', 'overlay:close',
 	'app:state', 'app:setDontDisturb',
-	'workspaces:menu', 'workspaces:save', 'workspaces:get', 'workspaces:setIcon',
+	'workspaces:menu', 'workspaces:save', 'workspaces:get', 'workspaces:setIcon', 'workspaces:images',
 	'preferences:get', 'preferences:set', 'app:action', 'spellcheck:languages', 'catalogue:icon',
 	'lock:hasPassword', 'lock:setPassword', 'lock:unlock', 'app:about', 'services:report', 'screenShare:pick', 'app:lock'
 ] as const;

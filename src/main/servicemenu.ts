@@ -1,10 +1,11 @@
+import type { NativeImage } from 'electron';
 import type { Messages } from '../shared/i18n/index.ts';
 
 export interface ServiceMenuState {
 	enabled: boolean;
 	notifications: boolean;
 	sound: boolean;
-	workspaces: readonly { id: string; name: string }[];
+	workspaces: readonly { id: string; name: string; image?: NativeImage | string }[];
 	workspace: string;
 }
 
@@ -26,6 +27,7 @@ export interface ServiceMenuItem {
 	checked?: boolean;
 	enabled?: boolean;
 	accelerator?: string;
+	icon?: NativeImage | string;
 	click?: () => void;
 }
 
@@ -47,7 +49,7 @@ export function serviceMenu(state: ServiceMenuState, actions: ServiceMenuActions
 		// One radio group: a separator would split it, and Electron ticks the lone item of a group of its own.
 		submenu: [
 			...state.workspaces.map(workspace => ({
-				label: workspace.name, type: 'radio' as const, checked: state.workspace === workspace.id, click: () => actions.moveToWorkspace(workspace.id)
+				label: workspace.name, type: 'radio' as const, checked: state.workspace === workspace.id, icon: workspace.image, click: () => actions.moveToWorkspace(workspace.id)
 			})),
 			{ label: messages['menu.everyWorkspace'], type: 'radio', checked: state.workspace === '', click: () => actions.moveToWorkspace('') }
 		]

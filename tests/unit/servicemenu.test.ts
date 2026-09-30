@@ -33,3 +33,9 @@ test('moves a service to a workspace, or to all of them, in one radio group with
 	assert.deepEqual(moved, ['']);
 	assert.equal(labels(running).includes('Move to Workspace'), false);
 });
+
+test('shows each workspace\'s image in Move to Workspace, and none beside All Workspaces, which is not one', () => {
+	const withImages = { ...running, workspaces: [{ id: 'w1', name: 'Work', image: 'image of w1' }, { id: 'w2', name: 'Home' }], workspace: 'w1' };
+	const submenu = serviceMenu(withImages, actions, en).find(item => item.label === 'Move to Workspace')?.submenu ?? [];
+	assert.deepEqual(submenu.map(item => item.icon), ['image of w1', undefined, undefined]);
+});

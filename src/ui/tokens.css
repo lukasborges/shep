@@ -62,6 +62,7 @@ html.overlay, html.overlay body {
 /*
  * Workspace hues, from the Adwaita palette. The glyph takes the darker shade (5) on a light surface and the
  * lighter one (3) on a dark surface; the rail is dark in both themes, so there it is always the lighter one.
+ * A native menu's surface follows neither theme, so its images fill a tile with the darker shade under a white glyph.
  */
 :root {
 	--rx-rail-hue-blue: #62A0EA;    --rx-tint-blue: rgba(53, 132, 228, 0.24);
@@ -72,13 +73,22 @@ html.overlay, html.overlay body {
 	--rx-rail-hue-purple: #C061CB;  --rx-tint-purple: rgba(145, 65, 172, 0.24);
 	--rx-rail-hue-brown: #CDAB8F;   --rx-tint-brown: rgba(152, 106, 68, 0.26);
 
-	--rx-hue-blue: #1A5FB4;
-	--rx-hue-green: #26A269;
-	--rx-hue-yellow: #C88800;
-	--rx-hue-orange: #C64600;
-	--rx-hue-red: #C01C28;
-	--rx-hue-purple: #813D9C;
-	--rx-hue-brown: #865E3C;
+	--rx-deep-hue-blue: #1A5FB4;
+	--rx-deep-hue-green: #26A269;
+	--rx-deep-hue-yellow: #C88800;
+	--rx-deep-hue-orange: #C64600;
+	--rx-deep-hue-red: #C01C28;
+	--rx-deep-hue-purple: #813D9C;
+	--rx-deep-hue-brown: #865E3C;
+	--rx-deep-neutral: #77767B;
+
+	--rx-hue-blue: var(--rx-deep-hue-blue);
+	--rx-hue-green: var(--rx-deep-hue-green);
+	--rx-hue-yellow: var(--rx-deep-hue-yellow);
+	--rx-hue-orange: var(--rx-deep-hue-orange);
+	--rx-hue-red: var(--rx-deep-hue-red);
+	--rx-hue-purple: var(--rx-deep-hue-purple);
+	--rx-hue-brown: var(--rx-deep-hue-brown);
 }
 
 @media (prefers-color-scheme: dark) {

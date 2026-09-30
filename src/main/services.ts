@@ -13,6 +13,7 @@ import { serviceOwningLink } from './links.ts';
 import { attachPageMenu } from './menus.ts';
 import { serviceMenu } from './servicemenu.ts';
 import { NOTIFICATION_WRAPPER } from './notifications.ts';
+import { workspaceImage } from './workspaceimages.ts';
 
 // A page that marks itself as a title bar, as Teams does, would take the window's clicks, and
 // the region outlives the page. A user stylesheet outranks the page's own !important.
@@ -185,7 +186,7 @@ export class ServiceHost {
 			enabled: record.enabled,
 			notifications: record.notifications,
 			sound: !record.muted,
-			workspaces: store.get('workspaces'),
+			workspaces: store.get('workspaces').map(workspace => ({ ...workspace, image: workspaceImage(workspace.id) })),
 			workspace: record.workspace
 		}, {
 			reload: () => this.navigate(id, 'reload'),

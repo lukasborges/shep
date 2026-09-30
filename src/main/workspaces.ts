@@ -2,6 +2,7 @@ import { dialog, Menu, type BrowserWindow } from 'electron';
 import { WORKSPACE_ICONS, hueOf, workspaceForNumber, type ActiveWorkspace, type Workspace, type WorkspaceIcon } from '../shared/workspace.ts';
 import { store } from './store.ts';
 import { workspaceMenu } from './workspacemenu.ts';
+import { workspaceImage } from './workspaceimages.ts';
 import type { ServiceHost } from './services.ts';
 import { mainMessages } from './messages.ts';
 import { fill } from '../shared/i18n/index.ts';
@@ -71,7 +72,7 @@ export class Workspaces {
 			rename: id => this.askForName(id),
 			changeIcon: id => this.askForIcon(id),
 			remove: id => { this.remove(id); }
-		}, mainMessages());
+		}, mainMessages(), workspaceImage);
 		Menu.buildFromTemplate(items).popup({ window: this.window });
 	}
 }
