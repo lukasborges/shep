@@ -11,13 +11,16 @@
 
 const { execFileSync } = require('child_process');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
 const logo = path.join(root, 'resources', 'logo');
 
 const MASTER = path.join(logo, 'Logo.svg');
-const MASTER_UNREAD = path.join(logo, 'LogoUnread.svg');
+// Windows draws an app's icon as its own shape rather than on a plate, so it takes the mark without its box.
+const WINDOWS = path.join(logo, 'MarkWindows.svg');
+const WINDOWS_UNREAD = path.join(logo, 'MarkWindowsUnread.svg');
 const LINUX_TRAY = path.join(logo, 'LogoTray.svg');
 const LINUX_TRAY_UNREAD = path.join(logo, 'LogoTrayUnread.svg');
 
@@ -28,14 +31,17 @@ const GALLERY = [16, 24, 32, 48, 64, 96, 128, 256, 512, 1024];
 // what electron-builder reads for the Linux packages
 const INSTALLER = [16, 24, 32, 48, 64, 96, 128, 256, 512];
 
-// and for the Windows one, which wants them in a single .ico: the sizes Windows picks between
+// and for the Windows one, which wants them in a single .ico: the sizes Windows picks between.
+// They are rendered from WINDOWS into a folder of their own, which is packed and then removed.
 const ICO = [16, 24, 32, 48, 64, 128, 256];
 
 // The window and dock icon, and the tray at the three densities Electron asks
 // for. The tray is small: 24 is what a panel gives it, 16 what Windows' notification
 // area and a Mac's menu bar do, and Windows takes the coloured mark rather than the symbolic one.
+// The window's own icon is what Windows' taskbar shows, so Windows has one without the box.
 const APP = [
 	{ from: MASTER, to: 'resources/Icon.png', size: 256 },
+	{ from: WINDOWS, to: 'resources/IconWindows.png', size: 256 },
 	{ from: LINUX_TRAY, to: 'resources/IconTray.png', size: 24 },
 	{ from: LINUX_TRAY, to: 'resources/IconTray@2x.png', size: 48 },
 	{ from: LINUX_TRAY, to: 'resources/IconTray@4x.png', size: 96 },
@@ -48,12 +54,12 @@ const APP = [
 	{ from: LINUX_TRAY_UNREAD, to: 'resources/IconTrayMacUnread.png', size: 16 },
 	{ from: LINUX_TRAY_UNREAD, to: 'resources/IconTrayMacUnread@2x.png', size: 32 },
 	{ from: LINUX_TRAY_UNREAD, to: 'resources/IconTrayMacUnread@4x.png', size: 64 },
-	{ from: MASTER, to: 'resources/IconTrayColour.png', size: 16 },
-	{ from: MASTER, to: 'resources/IconTrayColour@2x.png', size: 32 },
-	{ from: MASTER, to: 'resources/IconTrayColour@4x.png', size: 64 },
-	{ from: MASTER_UNREAD, to: 'resources/IconTrayColourUnread.png', size: 16 },
-	{ from: MASTER_UNREAD, to: 'resources/IconTrayColourUnread@2x.png', size: 32 },
-	{ from: MASTER_UNREAD, to: 'resources/IconTrayColourUnread@4x.png', size: 64 }
+	{ from: WINDOWS, to: 'resources/IconTrayColour.png', size: 16 },
+	{ from: WINDOWS, to: 'resources/IconTrayColour@2x.png', size: 32 },
+	{ from: WINDOWS, to: 'resources/IconTrayColour@4x.png', size: 64 },
+	{ from: WINDOWS_UNREAD, to: 'resources/IconTrayColourUnread.png', size: 16 },
+	{ from: WINDOWS_UNREAD, to: 'resources/IconTrayColourUnread@2x.png', size: 32 },
+	{ from: WINDOWS_UNREAD, to: 'resources/IconTrayColourUnread@4x.png', size: 64 }
 ];
 
 function render(from, to, size) {
@@ -92,7 +98,11 @@ function main() {
 	const installer = size => path.join(root, 'resources', 'installer', 'icons', `${size}x${size}.png`);
 	for (const size of INSTALLER) render(MASTER, installer(size), size);
 
-	pack(path.join(root, 'resources', 'installer', 'icon.ico'), ICO, installer);
+	const ico = fs.mkdtempSync(path.join(os.tmpdir(), 'shep-ico-'));
+	const windows = size => path.join(ico, `${size}x${size}.png`);
+	for (const size of ICO) render(WINDOWS, windows(size), size);
+	pack(path.join(root, 'resources', 'installer', 'icon.ico'), ICO, windows);
+	fs.rmSync(ico, { recursive: true, force: true });
 
 	for (const icon of APP) render(icon.from, path.join(root, icon.to), icon.size);
 

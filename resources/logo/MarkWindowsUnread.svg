@@ -1,10 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
   <!--
-    The tray icon on Windows while something is unread: the full-colour mark
-    with the red dot LogoTrayUnread.svg puts on the Linux one, and the same
-    gap cut around it so the two do not merge at 16px, drawn here on the 128
-    canvas the app icon uses. The dot is Adwaita red 3, the badge colour the
-    app uses everywhere else.
+    The tray icon on Windows while something is unread: MarkWindows.svg with
+    the red dot LogoTrayUnread.svg puts on the Linux one, and the same gap cut
+    around it so the dot and the ear do not merge at 16px. The dot is Adwaita
+    red 3, the badge colour the app uses everywhere else.
   -->
   <defs>
     <clipPath id="head"><path d="M64 98 C47 98 33 88 33 70 C33 52 46 36 64 36 C82 36 95 52 95 70 C95 88 81 98 64 98 Z"/></clipPath>
@@ -14,8 +13,12 @@
     </mask>
   </defs>
   <g mask="url(#notch)">
-    <rect x="12" y="12" width="104" height="104" rx="8" fill="#1a5fb4"/>
-    <g transform="translate(64 64) scale(1.04) translate(-64 -66)">
+    <g transform="translate(64 64) scale(1.36) translate(-64 -66)">
+      <g fill="#ffffff" stroke="#ffffff" stroke-width="6" stroke-linejoin="round">
+        <path d="M52 39 C42 32 29 34 24 45 C20 54 22 64 28 66 C33 68 37 60 40 52 Z"/>
+        <path d="M76 39 C86 32 99 34 104 45 C108 54 106 64 100 66 C95 68 91 60 88 52 Z"/>
+        <path d="M64 98 C47 98 33 88 33 70 C33 52 46 36 64 36 C82 36 95 52 95 70 C95 88 81 98 64 98 Z"/>
+      </g>
       <path fill="#241f31" d="M52 39 C42 32 29 34 24 45 C20 54 22 64 28 66 C33 68 37 60 40 52 Z"/>
       <path fill="#241f31" d="M76 39 C86 32 99 34 104 45 C108 54 106 64 100 66 C95 68 91 60 88 52 Z"/>
       <path fill="#241f31" d="M64 98 C47 98 33 88 33 70 C33 52 46 36 64 36 C82 36 95 52 95 70 C95 88 81 98 64 98 Z"/>

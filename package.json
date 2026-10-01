@@ -149,6 +149,7 @@
 		"files": [
 			"out/**/*",
 			"resources/Icon.png",
+			"resources/IconWindows.png",
 			"resources/IconTray*.png"
 		]
 	},
