@@ -22,7 +22,7 @@ import { APP_ACTIONS, type AppAction } from '../shared/channels.ts';
 import { WORKSPACE_ICONS } from '../shared/workspace.ts';
 import { NAVIGATIONS } from '../shared/service.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '../shared/preferences.ts';
-import { shortcutFor, type KeyInput, type ShortcutAction } from './shortcuts.ts';
+import { leavesFullScreen, shortcutFor, type KeyInput, type ShortcutAction } from './shortcuts.ts';
 import { setWorkspaceImages } from './workspaceimages.ts';
 import type { AppState } from '../shared/channels.ts';
 
@@ -202,7 +202,8 @@ if ( !app.requestSingleInstanceLock() ) {
 			case 'reload': return services?.reloadActive(shortcut.ignoringCache);
 			case 'zoom': return services?.zoomActive(shortcut.step);
 			case 'history': if ( active ) services?.navigate(active, shortcut.direction); return;
-			case 'fullscreen': mainWindow?.setFullScreen(!mainWindow.isFullScreen()); return;
+			// a page left in its own full screen would otherwise stay there in a window that no longer is
+			case 'fullscreen': if ( !services?.leavePageFullScreen() ) mainWindow?.setFullScreen(!mainWindow.isFullScreen()); return;
 			case 'developerTools': services?.activeContents()?.toggleDevTools(); return;
 			case 'addService': overlay?.open({ dialog: 'add' }); return;
 			case 'dontDisturb': return setDontDisturb(!store.get('dontDisturb'));
@@ -215,6 +216,7 @@ if ( !app.requestSingleInstanceLock() ) {
 
 	// While locked, a shortcut does nothing, and no key reaches a page but the lock screen's.
 	const handleShortcut = (input: KeyInput, showsLockScreen = false): boolean => {
+		if ( leavesFullScreen(input, process.platform) && mainWindow?.isFullScreen() && !services?.leavePageFullScreen() ) mainWindow.setFullScreen(false);
 		const shortcut = shortcutFor(input, process.platform);
 		if ( shortcut ) run(shortcut);
 		return shortcut !== null || (store.get('locked') && !showsLockScreen);

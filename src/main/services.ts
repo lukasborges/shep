@@ -27,6 +27,8 @@ interface RunningService {
 	view: WebContentsView;
 	unread: UnreadCount;
 	pageTitle: string;
+	// a video or slides the page itself put in full screen
+	pageFullScreen: boolean;
 	disposeBlinkGuard: () => void;
 }
 
@@ -222,6 +224,15 @@ export class ServiceHost {
 		return active ? this.contentsOf(active) : undefined;
 	}
 
+	// Leaves the full screen the active page asked for, if it is in one, and says whether it was.
+	leavePageFullScreen(): boolean {
+		const active = store.get('activeServiceId');
+		const running = active ? this.running.get(active) : undefined;
+		if ( !running?.pageFullScreen ) return false;
+		running.view.webContents.executeJavaScript('document.exitFullscreen()', true).catch(() => {});
+		return true;
+	}
+
 	// The services the rail shows, in its order.
 	shownIds(): string[] {
 		const active = store.get('activeWorkspace');
@@ -340,7 +351,9 @@ export class ServiceHost {
 	private layout(): void {
 		const [width = 0, height = 0] = this.window.getContentSize();
 		const contentArea = { x: RAIL_WIDTH, y: TITLE_BAR_HEIGHT, width: Math.max(0, width - RAIL_WIDTH), height: Math.max(0, height - TITLE_BAR_HEIGHT) };
-		this.running.forEach(service => service.view.setBounds(contentArea));
+		// a page in its own full screen covers the rail and the title bar too, as it would in a browser
+		const wholeWindow = { x: 0, y: 0, width, height };
+		this.running.forEach(service => service.view.setBounds(service.pageFullScreen ? wholeWindow : contentArea));
 	}
 
 	private announce(): void {
@@ -377,7 +390,7 @@ export class ServiceHost {
 			if ( running ) running.unread = count;
 			this.announce();
 		});
-		this.running.set(record.id, { view, unread: 0, pageTitle: '', disposeBlinkGuard: blinkGuard.dispose });
+		this.running.set(record.id, { view, unread: 0, pageTitle: '', pageFullScreen: false, disposeBlinkGuard: blinkGuard.dispose });
 
 		applyPermissionPolicy(contents.session, this.window, () => this.existing(record.id));
 		this.events.sessionStarted(contents.session);
@@ -423,6 +436,11 @@ export class ServiceHost {
 			if ( trusted ) event.preventDefault();
 			callback(trusted);
 			if ( !trusted && !this.window.isDestroyed() ) this.window.webContents.send('services:certificate-error', record.id);
+		});
+		for ( const [change, on] of [['enter-html-full-screen', true], ['leave-html-full-screen', false]] as const ) contents.on(change as 'enter-html-full-screen', () => {
+			const running = this.running.get(record.id);
+			if ( running ) running.pageFullScreen = on;
+			this.layout();
 		});
 		contents.on('before-input-event', (event, input) => {
 			if ( this.events.shortcut(input) ) event.preventDefault();

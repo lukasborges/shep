@@ -17,6 +17,7 @@ const press = (urlPrefix: string, keyCode: string, modifiers: string[]) => shep.
 	contents?.sendInputEvent({ type: 'keyDown', keyCode, modifiers: modifiers as Electron.InputEvent['modifiers'] });
 	contents?.sendInputEvent({ type: 'keyUp', keyCode, modifiers: modifiers as Electron.InputEvent['modifiers'] });
 }, { urlPrefix, keyCode, modifiers });
+const windowFullScreen = () => shep.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isFullScreen());
 const loaded = (url: string) => shep.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL() === url && !contents.isLoading()), url);
 
 test.beforeAll(async () => {
@@ -62,6 +63,35 @@ test('zooms the active service with Ctrl+= and resets it with Ctrl+0, keeping th
 	await expect.poll(zoom).toBe(0.25);
 	await press(first(), '0', [COMMAND]);
 	await expect.poll(zoom).toBe(0);
+});
+
+test('leaves the full screen F11 entered with Escape as well, whose buttons it hides', async () => {
+	test.skip(process.platform === 'darwin', 'a Mac enters full screen with Control+Command+F and leaves Escape to the page');
+	await press(first(), 'F11', []);
+	await expect.poll(windowFullScreen).toBe(true);
+	await press(first(), 'Escape', []);
+	await expect.poll(windowFullScreen).toBe(false);
+});
+
+test('gives a page in its own full screen the whole window, and F11 takes it out of it', async () => {
+	test.skip(process.platform === 'darwin', 'a Mac has no F11');
+	const pageFullScreen = () => shep.app.evaluate(({ webContents }, url) =>
+		webContents.getAllWebContents().find(contents => contents.getURL() === url)?.executeJavaScript('!!document.fullscreenElement'), first());
+	const covers = () => shep.app.evaluate(({ BrowserWindow }, url) => {
+		const [window] = BrowserWindow.getAllWindows();
+		const view = window?.contentView.children.find(child => 'webContents' in child && (child as Electron.WebContentsView).webContents.getURL() === url);
+		const [width, height] = window?.getContentSize() ?? [];
+		const bounds = view?.getBounds();
+		return bounds?.x === 0 && bounds.y === 0 && bounds.width === width && bounds.height === height;
+	}, first());
+	await shep.app.evaluate(({ webContents }, url) =>
+		webContents.getAllWebContents().find(contents => contents.getURL() === url)?.executeJavaScript('document.documentElement.requestFullscreen()', true), first());
+	await expect.poll(pageFullScreen).toBe(true);
+	await expect.poll(covers).toBe(true);
+	await press(first(), 'F11', []);
+	await expect.poll(pageFullScreen).toBe(false);
+	await expect.poll(windowFullScreen).toBe(false);
+	await expect.poll(covers).toBe(false);
 });
 
 test('shows a zoom other than 100% in the title bar, and a click there resets it', async () => {

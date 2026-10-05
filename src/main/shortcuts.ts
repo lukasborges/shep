@@ -27,6 +27,12 @@ export type ShortcutAction =
 
 const DIGIT = /^[1-9]$/;
 
+// Full screen hides the window's buttons, so Escape leaves it as well as the key that entered it. The page still
+// gets the key, to close what it has open. A Mac keeps its buttons a hover away, and there Escape is the page's.
+export function leavesFullScreen({ type, key, control, shift, alt, meta }: KeyInput, platform: NodeJS.Platform): boolean {
+	return platform !== 'darwin' && type === 'keyDown' && key === 'Escape' && !control && !shift && !alt && !meta;
+}
+
 export function shortcutFor(input: KeyInput, platform: NodeJS.Platform): ShortcutAction | null {
 	if ( input.type !== 'keyDown' ) return null;
 	return platform === 'darwin' ? onMac(input) : elsewhere(input);

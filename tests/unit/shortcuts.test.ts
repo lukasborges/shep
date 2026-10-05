@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { shortcutFor, type KeyInput } from '../../src/main/shortcuts.ts';
+import { leavesFullScreen, shortcutFor, type KeyInput } from '../../src/main/shortcuts.ts';
 
 const press = (key: string, modifiers: Partial<KeyInput> = {}, platform: NodeJS.Platform = 'linux') =>
 	shortcutFor({ type: 'keyDown', key, control: false, shift: false, alt: false, meta: false, ...modifiers }, platform);
@@ -74,4 +74,14 @@ test('on a Mac, leaves the arrows to the caret: history is on the brackets, and 
 	assert.deepEqual(onMac('Tab', { control: true }), { action: 'cycle', step: 1 });
 	assert.deepEqual(onMac('f', { control: true, meta: true }), { action: 'fullscreen' });
 	assert.equal(onMac('F11'), null);
+});
+
+test('leaves full screen with a bare Escape too, except on a Mac, where Escape stays the page\'s', () => {
+	const escape = (modifiers: Partial<KeyInput> = {}, platform: NodeJS.Platform = 'win32') =>
+		leavesFullScreen({ type: 'keyDown', key: 'Escape', control: false, shift: false, alt: false, meta: false, ...modifiers }, platform);
+	assert.equal(escape(), true);
+	assert.equal(escape({}, 'linux'), true);
+	assert.equal(escape({ shift: true }), false);
+	assert.equal(escape({ type: 'keyUp' }), false);
+	assert.equal(escape({}, 'darwin'), false);
 });
