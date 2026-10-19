@@ -11,8 +11,6 @@
 
 Shep keeps WhatsApp, Gmail, Slack, Teams, Claude or anything else with a web address in a rail down the left of one window, each signed in on its own, each counting what is unread. It runs on Linux, Windows and macOS.
 
-The window follows the desktop's light or dark style on each of them. On Windows and on a Mac the title bar carries the system's own buttons; Windows' notification area takes the coloured mark, and Linux panels and a Mac's menu bar the flat one.
-
 ## How it works
 
 Press `+` and pick a service from the list, or type any address; either way, that is the service. The list only fills in a name and an address, and a service picked from it is the same as one typed in.
