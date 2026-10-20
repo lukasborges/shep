@@ -1,16 +1,18 @@
 <script lang="ts">
 	import type { Messages } from '../shared/i18n/index.ts';
-	import type { ServiceRecord } from '../shared/service.ts';
+	import { hasOwnSession, type ServiceRecord } from '../shared/service.ts';
 	import { normalizeUrl } from '../shared/address.ts';
 	import type { AppState } from '../shared/channels.ts';
 	import { CATALOGUE, CATALOGUE_GROUPS, matchCatalogue, type CatalogueEntry } from '../shared/catalogue.ts';
 	import { initials } from './initials.ts';
+	import Switch from './Switch.svelte';
 
 	const { messages, serviceId, onclose }: { messages: Messages; serviceId: string | null; onclose: () => void } = $props();
 
 	let address = $state('');
 	let name = $state('');
 	let workspace = $state('');
+	let ownSession = $state(false);
 	let appNow = $state<AppState | null>(null);
 	let touched = $state(false);
 	let addressField = $state<HTMLInputElement>();
@@ -56,6 +58,7 @@
 			address = service.url;
 			name = service.name;
 			workspace = service.workspace;
+			ownSession = hasOwnSession(service);
 			addressField?.select();
 		});
 	});
@@ -64,8 +67,8 @@
 		event.preventDefault();
 		touched = true;
 		if ( !isValid ) return;
-		if ( serviceId ) await window.shep.invoke('services:update', serviceId, address, name, workspace);
-		else await window.shep.invoke('services:add', address, name, workspace);
+		if ( serviceId ) await window.shep.invoke('services:update', serviceId, address, name, workspace, ownSession);
+		else await window.shep.invoke('services:add', address, name, workspace, ownSession);
 		onclose();
 	}
 </script>
@@ -115,6 +118,14 @@
 		</label>
 	{/if}
 
+	<div class="own-session">
+		<div class="text">
+			<span>{messages['dialog.ownSession']}</span>
+			<span class="hint">{messages['dialog.ownSession.hint']}</span>
+		</div>
+		<Switch label={messages['dialog.ownSession']} checked={ownSession} onchange={on => ownSession = on} />
+	</div>
+
 	<footer>
 		<button type="button" class="secondary" onclick={onclose}>{messages['dialog.cancel']}</button>
 		<button type="submit" class="primary">{serviceId ? messages['dialog.save'] : messages['dialog.add']}</button>
@@ -124,6 +135,28 @@
 <style>
 	.dialog.adding {
 		width: min(560px, calc(100vw - 32px));
+	}
+
+	.own-session {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+	}
+
+	.text {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+		font-size: 13px;
+		font-weight: 600;
+	}
+
+	.hint {
+		color: var(--rx-muted);
+		font-size: 12px;
+		font-weight: 400;
 	}
 
 	.catalogue {

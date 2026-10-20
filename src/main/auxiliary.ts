@@ -6,6 +6,10 @@ import { attachPageMenu } from './menus.ts';
 const AUXILIARY_WINDOW_OPTIONS = { width: 1100, height: 780, autoHideMenuBar: true };
 const BLANK_WINDOW_WRITTEN_CHECK_MS = 1000;
 
+const openingServiceOfWindow = new WeakMap<WebContents, WebContents>();
+
+export const serviceContentsOf = (contents: WebContents) => openingServiceOfWindow.get(contents) ?? contents;
+
 function showOnceWrittenIntoOrNavigated(window: BrowserWindow): void {
 	let shown = false;
 	const show = () => {
@@ -72,6 +76,7 @@ export function keepLinksInTheApp(contents: WebContents, serviceContents: WebCon
 	contents.on('did-create-window', (window, details) => {
 		window.center();
 		const openedAsPopup = popupFlagsInOpenOrder.shift() ?? false;
+		openingServiceOfWindow.set(window.webContents, serviceContents);
 		attachPageMenu(window.webContents);
 		followColorScheme(window.webContents);
 		keepLinksInTheApp(window.webContents, serviceContents, serviceAddress, openInOwningService);

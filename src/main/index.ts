@@ -68,8 +68,10 @@ if ( !app.requestSingleInstanceLock() ) {
 	handle('app:getVersion', () => version);
 	handle('services:list', () => services?.list() ?? []);
 	handle('services:activate', (event, id) => services?.activate(typeof id === 'string' ? id : null));
-	handle('services:add', (event, url, name, workspace) => services?.add(text(url), text(name), typeof workspace === 'string' ? workspace : undefined) ?? null);
-	handle('services:update', (event, id, url, name, workspace) => services?.update(text(id), text(url), text(name), typeof workspace === 'string' ? workspace : undefined) ?? false);
+	handle('services:add', (event, url, name, workspace, ownSession) =>
+		services?.add(text(url), text(name), typeof workspace === 'string' ? workspace : undefined, ownSession === true) ?? null);
+	handle('services:update', (event, id, url, name, workspace, ownSession) =>
+		services?.update(text(id), text(url), text(name), typeof workspace === 'string' ? workspace : undefined, typeof ownSession === 'boolean' ? ownSession : undefined) ?? false);
 	handle('services:reorder', (event, ids) => services?.reorder(Array.isArray(ids) ? ids.map(text) : []));
 	handle('services:menu', (event, id) => services?.showMenu(text(id)));
 	handle('services:record', (event, id) => store.get('services').find(service => service.id === text(id)) ?? null);

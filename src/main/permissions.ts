@@ -1,6 +1,6 @@
-import { dialog, type BrowserWindow, type Session } from 'electron';
+import { dialog, type BrowserWindow, type Session, type WebContents } from 'electron';
 import { store } from './store.ts';
-import type { ServiceRecord } from '../shared/service.ts';
+import { hasOwnSession, ownPartition, type ServiceRecord } from '../shared/service.ts';
 import { mainMessages } from './messages.ts';
 import { fill, type MessageKey } from '../shared/i18n/index.ts';
 
@@ -12,17 +12,19 @@ const ASKED_PERMISSIONS: Record<string, MessageKey> = {
 // Granted with the camera, or the display sleeps in the middle of a call.
 const CALL_PERMISSIONS = ['screen-wake-lock'];
 
-const rememberedKey = (partition: string, permission: string) => partition + '|' + permission;
+const ownSessionNameEvenWhenShared = (service: ServiceRecord) => hasOwnSession(service) ? service.partition : ownPartition(service.id);
 
-function remembered(partition: string, permission: string): boolean | undefined {
-	return store.get('permissions')[rememberedKey(partition, permission)];
+const rememberedKey = (service: ServiceRecord, permission: string) => ownSessionNameEvenWhenShared(service) + '|' + permission;
+
+function remembered(service: ServiceRecord, permission: string): boolean | undefined {
+	return store.get('permissions')[rememberedKey(service, permission)];
 }
 
 // A page asking for the camera and the microphone apart must not get two dialogs.
 const pendingQuestions = new Map<string, Promise<boolean>>();
 
 function askOnce(window: BrowserWindow, service: ServiceRecord, permission: string): Promise<boolean> {
-	const key = rememberedKey(service.partition, permission);
+	const key = rememberedKey(service, permission);
 	const pending = pendingQuestions.get(key) ?? ask(window, service, permission).finally(() => pendingQuestions.delete(key));
 	pendingQuestions.set(key, pending);
 	return pending;
@@ -40,21 +42,20 @@ async function ask(window: BrowserWindow, service: ServiceRecord, permission: st
 		detail: messages['permission.detail']
 	});
 	const allowed = response === 0;
-	store.set('permissions', { ...store.get('permissions'), [rememberedKey(service.partition, permission)]: allowed });
+	store.set('permissions', { ...store.get('permissions'), [rememberedKey(service, permission)]: allowed });
 	return allowed;
 }
 
-// current() is undefined once the service is removed, while its session can still be asking.
-export function applyPermissionPolicy(session: Session, window: BrowserWindow, current: () => ServiceRecord | undefined): void {
-	session.setPermissionRequestHandler((contents, permission, callback) => {
-		const service = current();
+export function applyPermissionPolicy(session: Session, window: BrowserWindow, serviceAsking: (contents: WebContents | null, origin: string) => ServiceRecord | undefined): void {
+	session.setPermissionRequestHandler((contents, permission, callback, details) => {
+		const service = serviceAsking(contents, details.requestingUrl);
 		if ( !service ) return callback(false);
 		if ( permission === 'notifications' ) return callback(service.notifications);
 		if ( SILENT_PERMISSIONS.includes(permission) ) return callback(true);
 		if ( CALL_PERMISSIONS.includes(permission) ) return callback(service.media);
 		if ( ASKED_PERMISSIONS[permission] ) {
 			if ( service.media ) return callback(true);
-			const answer = remembered(service.partition, permission);
+			const answer = remembered(service, permission);
 			if ( answer !== undefined ) return callback(answer);
 			askOnce(window, service, permission).then(callback, () => callback(false));
 			return;
@@ -63,14 +64,14 @@ export function applyPermissionPolicy(session: Session, window: BrowserWindow, c
 	});
 
 	// navigator.permissions.query never reaches the request handler
-	session.setPermissionCheckHandler((contents, permission) => {
-		const service = current();
+	session.setPermissionCheckHandler((contents, permission, origin) => {
+		const service = serviceAsking(contents, origin);
 		if ( !service ) return false;
 		if ( permission === 'notifications' ) return service.notifications;
 		if ( SILENT_PERMISSIONS.includes(permission) ) return true;
 		if ( CALL_PERMISSIONS.includes(permission) ) return service.media;
 		// A check can only say granted or denied, never "prompt", and a page told denied takes it for the user's refusal and never asks.
-		if ( ASKED_PERMISSIONS[permission] ) return service.media || remembered(service.partition, permission) !== false;
+		if ( ASKED_PERMISSIONS[permission] ) return service.media || remembered(service, permission) !== false;
 		return false;
 	});
 }

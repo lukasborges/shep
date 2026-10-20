@@ -33,7 +33,7 @@ export class PreferenceHost {
 		return RELAUNCH_PREFERENCES.includes(key);
 	}
 
-	// Every service keeps its own session, so each one needs the proxy set.
+	// The services share a session, or keep one of their own, and each session needs the proxy set.
 	followProxy(session: Session): void {
 		this.sessions.add(session);
 		this.applyProxy(session);

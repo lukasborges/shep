@@ -4,11 +4,32 @@ export type Navigation = (typeof NAVIGATIONS)[number];
 // '•' is a title saying there is something without saying how much.
 export type UnreadCount = number | '•';
 
+export const SHARED_PARTITION = 'persist:shared';
+
+export const ownPartition = (id: string) => `persist:service-${id}`;
+
+export const hasOwnSession = (record: Pick<ServiceRecord, 'partition'>) => record.partition !== SHARED_PARTITION;
+
+const originOf = (address: string) => {
+	try {
+		return new URL(address).origin;
+	} catch {
+		return null;
+	}
+};
+
+export function onlyServiceInSessionOrOnOrigin(services: ServiceRecord[], partition: string, origin: string): ServiceRecord | undefined {
+	const inSession = services.filter(service => service.partition === partition);
+	if ( inSession.length === 1 ) return inSession[0];
+	const asking = originOf(origin);
+	const onOrigin = inSession.filter(service => asking !== null && originOf(service.url) === asking);
+	return onOrigin.length === 1 ? onOrigin[0] : undefined;
+}
+
 export interface ServiceRecord {
 	id: string;
 	name: string;
 	url: string;
-	// persist:service-<id>: another name is another session, signed out, and the Ext app's were persist:<type>_<id>.
 	partition: string;
 	workspace: string;
 	enabled: boolean;

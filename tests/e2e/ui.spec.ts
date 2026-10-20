@@ -1,6 +1,6 @@
 import type { Server } from 'node:http';
 import { test, expect } from '@playwright/test';
-import type { ServiceState } from '../../src/shared/service.ts';
+import type { ServiceRecord, ServiceState } from '../../src/shared/service.ts';
 import { launchShep, closeShep, inService, serviceRecord, type Shep } from './helpers/launch.ts';
 import { serveFixtures } from './helpers/server.ts';
 
@@ -157,4 +157,23 @@ test('shows the app\'s state changes without an exception on the bridge', async 
 	await expect(shep.window.locator('.tool.on')).toHaveCount(0);
 	expect(thrown).toEqual([]);
 	await session.detach();
+});
+
+test('adds a service in a session of its own when its switch is turned on, which editing it shows', async () => {
+	const ownSession = () => inOverlay<string>('document.querySelector(".own-session [role=switch]").getAttribute("aria-checked")');
+	await shep.window.locator('.rail .add').click();
+	await expect.poll(overlayShown).toBe(true);
+	expect(await ownSession()).toBe('false');
+	await typeInto('input[name="address"]', at('localhost', '/long.html'));
+	await inOverlay('document.querySelector(".own-session [role=switch]").click()');
+	await inOverlay('document.querySelector("form").requestSubmit()');
+	await expect.poll(overlayShown).toBe(false);
+	const { id = '' } = (await list()).at(-1) ?? {};
+	const record = await shep.window.evaluate(id => window.shep.invoke('services:record', id), id) as ServiceRecord;
+	expect(record.partition).toBe('persist:service-' + id);
+
+	await shep.window.evaluate(id => window.shep.invoke('overlay:open', { dialog: 'edit', serviceId: id }), id);
+	await expect.poll(ownSession).toBe('true');
+	await inOverlay('document.querySelector("footer .secondary").click()');
+	await expect.poll(overlayShown).toBe(false);
 });
