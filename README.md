@@ -69,7 +69,7 @@ On a Mac, `⌘` takes the place of `Ctrl`, and `⌥` of `Alt`, except where the 
 
 ## Privacy
 
-There is no account and no server. Shep keeps your services, workspaces and preferences in `~/.config/Shep/shep.json`, on Windows `%APPDATA%\Shep\shep.json`, on a Mac `~/Library/Application Support/Shep/shep.json`, and the sessions beside it: the one the services share, so a site you sign in to once is signed in for every service on it, and one of its own for each service with Separate session on, which holds a second account of a site. You stay signed in until no service is left in a session, which deletes it.
+There is no account and no server. Shep keeps your services, workspaces and preferences in `~/.config/Shep/shep.json`, on Windows `%APPDATA%\Shep\shep.json`, on a Mac `~/Library/Application Support/Shep/shep.json`, and the sessions beside it: the one the services share, so a site you sign in to once is signed in for every service on it, and one of its own for each service set to sign in apart from the other services, which holds a second account of a site. You stay signed in until no service is left in a session, which deletes it.
 
 Shep sends nothing about you anywhere. It makes two requests of its own: the update check, to this repository's releases on GitHub, and the download of a spell-checking dictionary the first time a language needs one, which Chromium fetches from Google. What each service does is up to the service: Shep is a frame around its web app and does not look inside.
 

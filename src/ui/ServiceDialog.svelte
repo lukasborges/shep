@@ -119,10 +119,7 @@
 	{/if}
 
 	<div class="own-session">
-		<div class="text">
-			<span>{messages['dialog.ownSession']}</span>
-			<span class="hint">{messages['dialog.ownSession.hint']}</span>
-		</div>
+		<span>{messages['dialog.ownSession']}</span>
 		<Switch label={messages['dialog.ownSession']} checked={ownSession} onchange={on => ownSession = on} />
 	</div>
 
@@ -140,23 +137,10 @@
 	.own-session {
 		display: flex;
 		align-items: center;
+		justify-content: space-between;
 		gap: 16px;
-	}
-
-	.text {
-		display: flex;
-		flex: 1;
-		flex-direction: column;
-		gap: 2px;
-		min-width: 0;
 		font-size: 13px;
 		font-weight: 600;
-	}
-
-	.hint {
-		color: var(--rx-muted);
-		font-size: 12px;
-		font-weight: 400;
 	}
 
 	.catalogue {

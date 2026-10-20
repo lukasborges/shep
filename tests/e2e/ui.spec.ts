@@ -159,13 +159,14 @@ test('shows the app\'s state changes without an exception on the bridge', async 
 	await session.detach();
 });
 
-test('adds a service in a session of its own when its switch is turned on, which editing it shows', async () => {
-	const ownSession = () => inOverlay<string>('document.querySelector(".own-session [role=switch]").getAttribute("aria-checked")');
+test('signs a service in apart from the others when its switch is turned on, which editing it shows', async () => {
+	const signInApart = `document.querySelector('[role=switch][aria-label="Sign in apart from the other services"]')`;
+	const ownSession = () => inOverlay<string>(`${signInApart}.getAttribute("aria-checked")`);
 	await shep.window.locator('.rail .add').click();
 	await expect.poll(overlayShown).toBe(true);
 	expect(await ownSession()).toBe('false');
 	await typeInto('input[name="address"]', at('localhost', '/long.html'));
-	await inOverlay('document.querySelector(".own-session [role=switch]").click()');
+	await inOverlay(`${signInApart}.click()`);
 	await inOverlay('document.querySelector("form").requestSubmit()');
 	await expect.poll(overlayShown).toBe(false);
 	const { id = '' } = (await list()).at(-1) ?? {};
