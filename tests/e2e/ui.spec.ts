@@ -160,13 +160,13 @@ test('shows the app\'s state changes without an exception on the bridge', async 
 });
 
 test('signs a service in apart from the others when its switch is turned on, which editing it shows', async () => {
-	const signInApart = `document.querySelector('[role=switch][aria-label="Sign in apart from the other services"]')`;
-	const ownSession = () => inOverlay<string>(`${signInApart}.getAttribute("aria-checked")`);
+	const signInApartSwitch = `document.querySelector('[role=switch][aria-label="Sign in apart from the other services"]')`;
+	const signInApartChecked = () => inOverlay<string>(`${signInApartSwitch}.getAttribute("aria-checked")`);
 	await shep.window.locator('.rail .add').click();
 	await expect.poll(overlayShown).toBe(true);
-	expect(await ownSession()).toBe('false');
+	expect(await signInApartChecked()).toBe('false');
 	await typeInto('input[name="address"]', at('localhost', '/long.html'));
-	await inOverlay(`${signInApart}.click()`);
+	await inOverlay(`${signInApartSwitch}.click()`);
 	await inOverlay('document.querySelector("form").requestSubmit()');
 	await expect.poll(overlayShown).toBe(false);
 	const { id = '' } = (await list()).at(-1) ?? {};
@@ -174,7 +174,7 @@ test('signs a service in apart from the others when its switch is turned on, whi
 	expect(record.partition).toBe('persist:service-' + id);
 
 	await shep.window.evaluate(id => window.shep.invoke('overlay:open', { dialog: 'edit', serviceId: id }), id);
-	await expect.poll(ownSession).toBe('true');
+	await expect.poll(signInApartChecked).toBe('true');
 	await inOverlay('document.querySelector("footer .secondary").click()');
 	await expect.poll(overlayShown).toBe(false);
 });
