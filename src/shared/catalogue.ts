@@ -1,4 +1,5 @@
 import entries from '../../resources/catalogue.json' with { type: 'json' };
+import { folded } from './text.ts';
 
 export const CATALOGUE_GROUPS = ['messaging', 'work', 'mail', 'tasks', 'assistants', 'support', 'music'] as const;
 export type CatalogueGroup = (typeof CATALOGUE_GROUPS)[number];
@@ -13,8 +14,6 @@ export interface CatalogueEntry {
 
 // Addresses to start from, nothing more: a service added from here is the same as one typed in.
 export const CATALOGUE = entries as readonly CatalogueEntry[];
-
-const folded = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 
 // By name or by address, so both "outlook" and "office.com" find it.
 export function matchCatalogue(query: string, catalogue: readonly CatalogueEntry[] = CATALOGUE): CatalogueEntry[] {

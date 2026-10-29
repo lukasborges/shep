@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hasOwnSession, ownPartition, onlyServiceInSessionOrOnOrigin, SHARED_PARTITION, type ServiceRecord } from '../../src/shared/service.ts';
+import { hasOwnSession, ownPartition, onlyServiceInSessionOrOnOrigin, pageTitleBesideName, SHARED_PARTITION, type ServiceRecord } from '../../src/shared/service.ts';
 
 const service = (id: string, url: string, partition: string) => ({ id, url, partition }) as ServiceRecord;
 
@@ -30,4 +30,17 @@ test('takes a request to no service when the origin does not tell the services a
 	assert.equal(onlyServiceInSessionOrOnOrigin([gmail, chat], SHARED_PARTITION, 'https://drive.google.com'), undefined);
 	assert.equal(onlyServiceInSessionOrOnOrigin([gmail, chat], SHARED_PARTITION, ''), undefined);
 	assert.equal(onlyServiceInSessionOrOnOrigin([gmail], ownPartition('1'), 'https://mail.google.com'), undefined);
+});
+
+test('shows the page title beside the name only when the name does not already say it, whatever the case or accents', () => {
+	assert.equal(pageTitleBesideName('WhatsApp com título grandão', 'WhatsApp'), '');
+	assert.equal(pageTitleBesideName('Agenda do time', 'agenda'), '');
+	assert.equal(pageTitleBesideName('Calendário', 'Calendario'), '');
+	assert.equal(pageTitleBesideName('Zap do trabalho', 'WhatsApp'), 'WhatsApp');
+	assert.equal(pageTitleBesideName('Meet', 'Meet - Daily'), 'Meet - Daily');
+});
+
+test('leaves out the unread count a page puts before its title, which the rail already shows', () => {
+	assert.equal(pageTitleBesideName('Mail', '(3) Inbox'), 'Inbox');
+	assert.equal(pageTitleBesideName('WhatsApp', '(12) WhatsApp'), '');
 });

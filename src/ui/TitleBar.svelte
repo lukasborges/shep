@@ -1,15 +1,15 @@
 <script lang="ts">
 	import type { Messages } from '../shared/i18n/index.ts';
 	import { services, activeService, navigate, resetZoom, find, stopFind } from './services.svelte.ts';
-	import { zoomPercent } from '../shared/zoom.ts';	import { initials } from './initials.ts';
+	import { zoomPercent } from '../shared/zoom.ts';
+	import { pageTitleBesideName } from '../shared/service.ts';
+	import { initials } from './initials.ts';
 	import Icon from './Icon.svelte';
 
 	const { messages }: { messages: Messages } = $props();
 
 	const service = $derived(activeService());
-	// the page's own count is already on the rail
-	const pageTitle = $derived((service?.pageTitle ?? '').replace(/^\s*\([^)]*\)\s*/, ''));
-	const detail = $derived(services.hover || (pageTitle !== service?.name ? pageTitle : ''));
+	const detail = $derived(services.hover || (service ? pageTitleBesideName(service.name, service.pageTitle) : ''));
 
 	let finding = $state(false);
 	let query = $state('');

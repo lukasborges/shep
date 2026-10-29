@@ -1,3 +1,5 @@
+import { folded } from './text.ts';
+
 export const NAVIGATIONS = ['back', 'forward', 'reload', 'home'] as const;
 export type Navigation = (typeof NAVIGATIONS)[number];
 
@@ -17,6 +19,11 @@ const originOf = (address: string) => {
 		return null;
 	}
 };
+
+export function pageTitleBesideName(name: string, pageTitle: string): string {
+	const withoutUnreadCount = pageTitle.replace(/^\s*\([^)]*\)\s*/, '');
+	return folded(name).includes(folded(withoutUnreadCount)) ? '' : withoutUnreadCount;
+}
 
 export function onlyServiceInSessionOrOnOrigin(services: ServiceRecord[], partition: string, origin: string): ServiceRecord | undefined {
 	const inSession = services.filter(service => service.partition === partition);
