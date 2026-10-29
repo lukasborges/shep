@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { Messages } from '../shared/i18n/index.ts';
 	import { services, activeService, navigate, resetZoom, find, stopFind } from './services.svelte.ts';
-	import { zoomPercent } from '../shared/zoom.ts';
-	import { initials } from './initials.ts';
+	import { zoomPercent } from '../shared/zoom.ts';	import { initials } from './initials.ts';
 	import Icon from './Icon.svelte';
 
 	const { messages }: { messages: Messages } = $props();
@@ -15,6 +14,8 @@
 	let finding = $state(false);
 	let query = $state('');
 	let field = $state<HTMLInputElement>();
+	const hasMatches = $derived(Boolean(query && services.found?.matches));
+	const nothingFound = $derived(Boolean(query && services.found && !services.found.matches));
 
 	window.shep.on('titlebar:find', () => { if ( service ) openFind(); });
 
@@ -66,11 +67,13 @@
 				<button type="button" class="zoom" title={messages['titlebar.actualSize']} aria-label={messages['titlebar.actualSize']} onclick={() => resetZoom(service.id)}>{zoomPercent(service.zoomLevel)}%</button>
 			{/if}
 			{#if finding}
-				<input bind:this={field} bind:value={query} type="search" placeholder={messages['find.placeholder']} aria-label={messages['find.placeholder']}
-					oninput={() => search()} onkeydown={onKey} />
-				<span class="matches">{#if query && services.found}{services.found.matches ? `${services.found.active}/${services.found.matches}` : messages['find.none']}{/if}</span>
-				<button type="button" title={messages['find.previous']} aria-label={messages['find.previous']} onclick={() => search(false)}><Icon name="up" /></button>
-				<button type="button" title={messages['find.next']} aria-label={messages['find.next']} onclick={() => search(true)}><Icon name="down" /></button>
+				<div class="searchbox" class:nothing-found={nothingFound}>
+					<input bind:this={field} bind:value={query} type="search" placeholder={messages['find.placeholder']} aria-label={messages['find.placeholder']}
+						oninput={() => search()} onkeydown={onKey} />
+					<span class="matches" aria-live="polite">{#if hasMatches}{services.found?.active}/{services.found?.matches}{:else if nothingFound}<span aria-hidden="true">0/0</span><span class="spoken-only">{messages['find.none']}</span>{/if}</span>
+				</div>
+				<button type="button" title={messages['find.previous']} aria-label={messages['find.previous']} disabled={!hasMatches} onclick={() => search(false)}><Icon name="up" /></button>
+				<button type="button" title={messages['find.next']} aria-label={messages['find.next']} disabled={!hasMatches} onclick={() => search(true)}><Icon name="down" /></button>
 				<button type="button" title={messages['dialog.cancel']} aria-label={messages['dialog.cancel']} onclick={closeFind}><Icon name="close" /></button>
 			{:else}
 				<button type="button" title={messages['titlebar.find']} aria-label={messages['titlebar.find']} onclick={openFind}><Icon name="find" /></button>
@@ -97,9 +100,12 @@
 	}
 
 	.group {
+		position: relative;
+		z-index: 1;
 		display: flex;
 		align-items: center;
 		gap: 2px;
+		background-color: var(--rx-chrome);
 		-webkit-app-region: no-drag;
 	}
 
@@ -178,21 +184,62 @@
 		opacity: 0.7;
 	}
 
+	.searchbox {
+		display: flex;
+		align-items: center;
+		width: 220px;
+		height: 24px;
+		margin-right: 4px;
+		border-radius: var(--rx-radius);
+		background-color: var(--rx-field-on-chrome);
+	}
+
+	.searchbox:focus-within {
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--rx-on-chrome) 60%, transparent);
+	}
+
+	.searchbox.nothing-found {
+		background-color: color-mix(in srgb, var(--rx-alert-on-chrome) 30%, transparent);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--rx-alert-on-chrome) 85%, transparent);
+	}
+
 	input {
-		width: 200px;
-		height: 22px;
+		flex: 1;
+		min-width: 0;
+		height: 100%;
 		padding: 0 8px;
 		border: 0;
-		border-radius: var(--rx-radius);
-		background-color: var(--rx-hover-on-chrome);
+		background: none;
 		color: inherit;
 		font: inherit;
 		outline: none;
 	}
 
+	input::-webkit-search-cancel-button {
+		appearance: none;
+	}
+
+	input::placeholder {
+		color: inherit;
+		opacity: 0.9;
+	}
+
 	.matches {
-		min-width: 48px;
-		text-align: center;
-		opacity: 0.7;
+		padding-right: 8px;
+		font-variant-numeric: tabular-nums;
+		opacity: 0.9;
+	}
+
+	.nothing-found .matches {
+		opacity: 1;
+	}
+
+	.spoken-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 </style>

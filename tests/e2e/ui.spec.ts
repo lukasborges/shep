@@ -78,6 +78,56 @@ test('finds text in the active page and counts the matches', async () => {
 	await expect(shep.window.locator('.titlebar input[type="search"]')).toHaveCount(0);
 });
 
+test('marks the find field and turns the arrows off when nothing matches, saying so to a screen reader', async () => {
+	await shep.window.locator('.titlebar button[aria-label="Find in page"]').click();
+	await expect(shep.window.locator('.titlebar button[aria-label="Next match"]')).toBeDisabled();
+	const wordNotOnThePage = 'wolfhound';
+	await shep.window.locator('.titlebar input[type="search"]').fill(wordNotOnThePage);
+	await expect(shep.window.locator('.titlebar .searchbox')).toHaveClass(/nothing-found/);
+	await expect(shep.window.locator('.titlebar .matches [aria-hidden="true"]')).toHaveText('0/0');
+	await expect(shep.window.locator('.titlebar .matches .spoken-only')).toHaveText('No matches');
+	await expect(shep.window.locator('.titlebar button[aria-label="Previous match"]')).toBeDisabled();
+	await expect(shep.window.locator('.titlebar button[aria-label="Next match"]')).toBeDisabled();
+	await shep.window.locator('.titlebar input[type="search"]').fill('sheepdog');
+	await expect(shep.window.locator('.titlebar .searchbox')).not.toHaveClass(/nothing-found/);
+	await expect(shep.window.locator('.titlebar button[aria-label="Next match"]')).toBeEnabled();
+	await shep.window.locator('.titlebar input[type="search"]').press('Escape');
+});
+
+test('centres the title on the window, not on the space the buttons leave', async () => {
+	const title = (await shep.window.locator('.titlebar .identity').boundingBox())!;
+	const windowWidth = await shep.window.evaluate(() => window.innerWidth);
+	expect(Math.abs(title.x + title.width / 2 - windowWidth / 2)).toBeLessThanOrEqual(1);
+});
+
+test('covers the title with the find field in the narrowest window, so none of the title shows through', async () => {
+	const sizeBefore = await shep.app.evaluate(({ BrowserWindow }) => {
+		const window = BrowserWindow.getAllWindows()[0]!;
+		const [width, height] = window.getSize();
+		const [narrowestWidth] = window.getMinimumSize();
+		window.setSize(narrowestWidth!, height!);
+		return { width: width!, height: height! };
+	});
+	await shep.window.locator('.titlebar button[aria-label="Find in page"]').click();
+	const title = (await shep.window.locator('.titlebar .identity').boundingBox())!;
+	const field = (await shep.window.locator('.titlebar input[type="search"]').boundingBox())!;
+	expect(title.x + title.width).toBeGreaterThan(field.x);
+	const insideFieldAndTitle = { x: Math.max(field.x, title.x) + 4, y: field.y + field.height / 2 };
+	const fieldIsOnTopOfTitle = await shep.window.evaluate(({ x, y }) => {
+		const identity = document.querySelector<HTMLElement>('.titlebar .identity')!;
+		identity.style.pointerEvents = 'auto';
+		const topmost = document.elementFromPoint(x, y);
+		identity.style.pointerEvents = '';
+		return topmost?.matches('input[type="search"]') ?? false;
+	}, insideFieldAndTitle);
+	expect(fieldIsOnTopOfTitle).toBe(true);
+	const opaqueColour = /^rgb\(/;
+	const fieldBackdrop = await shep.window.locator('.titlebar .group.end').evaluate(group => getComputedStyle(group).backgroundColor);
+	expect(fieldBackdrop).toMatch(opaqueColour);
+	await shep.window.locator('.titlebar input[type="search"]').press('Escape');
+	await shep.app.evaluate(({ BrowserWindow }, { width, height }) => BrowserWindow.getAllWindows()[0]!.setSize(width, height), sizeBefore);
+});
+
 test('adds a service from the address typed behind the +, naming it after the site', async () => {
 	await shep.window.locator('.rail .add').click();
 	await expect.poll(overlayShown).toBe(true);
