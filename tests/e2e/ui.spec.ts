@@ -67,6 +67,13 @@ test('shows the active service\'s name and page title in the title bar, and its 
 	await expect(shep.window.locator('.titlebar .identity .detail')).toHaveText('Fixture service');
 });
 
+test('shows a title the page changes on its own, with no navigation and no change to its unread count', async () => {
+	await inService(shep, at('127.0.0.1', '/service.html'), 'document.title = "Renamed by the page"');
+	await expect(shep.window.locator('.titlebar .identity .detail')).toHaveText('Renamed by the page');
+	await inService(shep, at('127.0.0.1', '/service.html'), 'document.title = "Fixture service"');
+	await expect(shep.window.locator('.titlebar .identity .detail')).toHaveText('Fixture service');
+});
+
 test('goes home to the address the service was added with', async () => {
 	await inService(shep, at('127.0.0.1', '/service.html'), `location.href = ${JSON.stringify(at('127.0.0.1', '/away.html?from=home'))}`);
 	await expect(shep.window.locator('.titlebar .identity .detail')).toHaveText('Somewhere else');
@@ -138,7 +145,8 @@ test('covers a long title with the title bar buttons in the narrowest window, so
 		window.setSize(narrowestWidth!, height!);
 		return { width: width!, height: height! };
 	});
-	await inService(shep, at('127.0.0.1', '/long.html'), 'document.title = "(121) A page title long enough to run under the buttons at the end of the title bar"');
+	await shep.window.locator('.rail .service[aria-label="Second"]').click();
+	await inService(shep, at('127.0.0.1', '/long.html'), 'document.title = "(120) A page title long enough to run under the buttons at the end of the title bar"');
 	const button = (await shep.window.locator('.titlebar button[aria-label="Find in page"]').boundingBox())!;
 	const titleEnd = async () => {
 		const title = (await shep.window.locator('.titlebar .identity').boundingBox())!;
