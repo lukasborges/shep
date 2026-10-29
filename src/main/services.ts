@@ -35,6 +35,7 @@ interface RunningService {
 export interface ServiceHostEvents {
 	edit(id: string): void;
 	changed(): void;
+	found(id: string, active: number, matches: number): void;
 	sessionStarted(session: Electron.Session): void;
 	// true when the key was an app shortcut, which the page then never sees
 	shortcut(input: KeyInput): boolean;
@@ -453,9 +454,7 @@ export class ServiceHost {
 		contents.on('update-target-url', (event, url) => {
 			if ( !this.window.isDestroyed() ) this.window.webContents.send('services:hover', record.id, url);
 		});
-		contents.on('found-in-page', (event, result) => {
-			if ( !this.window.isDestroyed() ) this.window.webContents.send('services:found', record.id, result.activeMatchOrdinal, result.matches);
-		});
+		contents.on('found-in-page', (event, result) => this.events.found(record.id, result.activeMatchOrdinal, result.matches));
 		contents.on('did-finish-load', () => contents.setZoomLevel(this.existing(record.id)?.zoomLevel ?? 0));
 		contents.on('certificate-error', (event, url, error, certificate, callback) => {
 			const trusted = this.existing(record.id)?.trust ?? false;

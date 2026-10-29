@@ -4,10 +4,9 @@ import { workspaceImages } from './workspaceImages.ts';
 
 export const appState = $state<AppState>({ dontDisturb: false, workspaces: [], activeWorkspace: null, unreadElsewhere: false, language: '' });
 
-export const services = $state<{ list: ServiceState[]; hover: string; found: { active: number; matches: number } | null }>({
+export const services = $state<{ list: ServiceState[]; hover: string }>({
 	list: [],
-	hover: '',
-	found: null
+	hover: ''
 });
 
 export function activeService(): ServiceState | undefined {
@@ -39,9 +38,6 @@ export async function loadServices(): Promise<void> {
 	services.list = await window.shep.invoke('services:list') as ServiceState[];
 	window.shep.on('services:changed', list => { services.list = list as ServiceState[]; });
 	window.shep.on('services:hover', (id, url) => { if ( id === activeService()?.id ) services.hover = String(url ?? ''); });
-	window.shep.on('services:found', (id, active, matches) => {
-		if ( id === activeService()?.id ) services.found = { active: Number(active), matches: Number(matches) };
-	});
 }
 
 export const activate = (id: string) => window.shep.invoke('services:activate', id);
@@ -50,8 +46,7 @@ export const reorder = (ids: string[]) => window.shep.invoke('services:reorder',
 export const openAddDialog = () => window.shep.invoke('overlay:open', { dialog: 'add' });
 export const navigate = (id: string, where: Navigation) => window.shep.invoke('service:navigate', id, where);
 export const resetZoom = (id: string) => window.shep.invoke('service:resetZoom', id);
-export const find = (id: string, query: string, forward: boolean) => window.shep.invoke('service:find', id, query, forward);
-export const stopFind = (id: string) => window.shep.invoke('service:stopFind', id);
+export const openFind = () => window.shep.invoke('find:open');
 export const setDontDisturb = (on: boolean) => window.shep.invoke('app:setDontDisturb', on);
 export const showWorkspaceMenu = () => window.shep.invoke('workspaces:menu');
 export const openPreferences = () => window.shep.invoke('overlay:open', { dialog: 'preferences' });

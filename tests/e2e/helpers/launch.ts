@@ -52,5 +52,18 @@ export function inService<T>(shep: Shep, urlPrefix: string, expression: string, 
 	}, { urlPrefix, expression, userGesture }) as Promise<T>;
 }
 
+export function inViewOverServices<T>(shep: Shep, hash: '#overlay' | '#find', expression: string): Promise<T> {
+	return shep.app.evaluate(async ({ webContents }, { hash, expression }) => {
+		const view = webContents.getAllWebContents().find(contents => contents.getURL().endsWith(hash));
+		if ( !view ) throw new Error('No view at ' + hash);
+		return view.executeJavaScript(expression);
+	}, { hash, expression }) as Promise<T>;
+}
+
+export function viewOverServicesShown(shep: Shep, hash: '#overlay' | '#find'): Promise<boolean> {
+	return shep.app.evaluate(({ BrowserWindow }, hash) =>
+		BrowserWindow.getAllWindows()[0]?.contentView.children.some(view => (view as unknown as { webContents: Electron.WebContents }).webContents.getURL().endsWith(hash) && view.getVisible()) ?? false, hash);
+}
+
 // the modifier the app's own keys are on, Command on a Mac and Control elsewhere
 export const COMMAND = process.platform === 'darwin' ? 'meta' : 'control';

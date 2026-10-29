@@ -4,6 +4,7 @@ import './tokens.css';
 import './dialog.css';
 import App from './App.svelte';
 import Overlay from './Overlay.svelte';
+import FindBar from './FindBar.svelte';
 
 const target = document.getElementById('app');
 if ( !target ) throw new Error('index.html has no #app');
@@ -12,7 +13,6 @@ if ( !target ) throw new Error('index.html has no #app');
 document.documentElement.style.setProperty('--rx-rail-width', RAIL_WIDTH + 'px');
 document.documentElement.style.setProperty('--rx-titlebar-height', TITLE_BAR_HEIGHT + 'px');
 
-// The same page draws the dialogs in the view main puts over the services.
-const isOverlay = location.hash === '#overlay';
-document.documentElement.classList.toggle('overlay', isOverlay);
-mount(isOverlay ? Overlay : App, { target });
+const viewOverServices = { '#overlay': Overlay, '#find': FindBar }[location.hash];
+document.documentElement.classList.toggle('overlay', viewOverServices !== undefined);
+mount(viewOverServices ?? App, { target });

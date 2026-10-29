@@ -1,7 +1,8 @@
 import type { Server } from 'node:http';
 import { test, expect } from '@playwright/test';
 import type { ServiceRecord, ServiceState } from '../../src/shared/service.ts';
-import { launchShep, closeShep, inService, serviceRecord, type Shep } from './helpers/launch.ts';
+import { TITLE_BAR_HEIGHT } from '../../src/shared/chrome.ts';
+import { launchShep, closeShep, inService, inViewOverServices, viewOverServicesShown, serviceRecord, type Shep } from './helpers/launch.ts';
 import { serveFixtures } from './helpers/server.ts';
 
 let shep: Shep;
@@ -10,18 +11,24 @@ let at: Awaited<ReturnType<typeof serveFixtures>>['at'];
 
 const list = () => shep.window.evaluate(() => window.shep.invoke('services:list')) as Promise<ServiceState[]>;
 const byId = async (id: string) => (await list()).find(service => service.id === id);
-const inOverlay = <T>(expression: string) => shep.app.evaluate(async ({ webContents }, expression) => {
-	const overlay = webContents.getAllWebContents().find(contents => contents.getURL().endsWith('#overlay'));
-	if ( !overlay ) throw new Error('No overlay');
-	return overlay.executeJavaScript(expression);
-}, expression) as Promise<T>;
-const overlayShown = () => shep.app.evaluate(({ BrowserWindow }) =>
-	BrowserWindow.getAllWindows()[0]?.contentView.children.some(view => (view as unknown as { webContents: Electron.WebContents }).webContents.getURL().endsWith('#overlay') && view.getVisible()) ?? false);
-const typeInto = (selector: string, value: string) => inOverlay(`(() => {
+const inOverlay = <T>(expression: string) => inViewOverServices<T>(shep, '#overlay', expression);
+const inFindBar = <T>(expression: string) => inViewOverServices<T>(shep, '#find', expression);
+const overlayShown = () => viewOverServicesShown(shep, '#overlay');
+const findBarShown = () => viewOverServicesShown(shep, '#find');
+const scriptTypingInto = (selector: string, value: string) => `(() => {
 	const field = document.querySelector(${JSON.stringify(selector)});
 	field.value = ${JSON.stringify(value)};
 	field.dispatchEvent(new Event('input', { bubbles: true }));
-})()`);
+})()`;
+const typeInto = (selector: string, value: string) => inOverlay(scriptTypingInto(selector, value));
+const findInPage = (query: string) => inFindBar(scriptTypingInto('input[type="search"]', query));
+const findBarText = (selector: string) => () => inFindBar<string | null>(`document.querySelector(${JSON.stringify(selector)})?.textContent ?? null`);
+const findBarButtonDisabled = (label: string) => () => inFindBar<boolean>(`document.querySelector('button[aria-label="${label}"]').disabled`);
+const pressEscapeInFindBar = () => inFindBar('window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))');
+const openFindBar = async () => {
+	await shep.window.locator('.titlebar button[aria-label="Find in page"]').click();
+	await expect.poll(findBarShown).toBe(true);
+};
 
 test.beforeAll(async () => {
 	({ server, at } = await serveFixtures());
@@ -68,30 +75,53 @@ test('goes home to the address the service was added with', async () => {
 	expect((await byId('1'))?.pageTitle).toBe('Fixture service');
 });
 
-test('finds text in the active page and counts the matches', async () => {
+test('finds text in the active page and counts the matches, and Escape closes the find bar', async () => {
 	await shep.window.locator('.rail .service[aria-label="Second"]').click();
 	await expect(shep.window.locator('.titlebar .identity b')).toHaveText('Second');
-	await shep.window.locator('.titlebar button[aria-label="Find in page"]').click();
-	await shep.window.locator('.titlebar input[type="search"]').fill('sheepdog');
-	await expect(shep.window.locator('.titlebar .matches')).toHaveText('1/3');
-	await shep.window.locator('.titlebar input[type="search"]').press('Escape');
-	await expect(shep.window.locator('.titlebar input[type="search"]')).toHaveCount(0);
+	await openFindBar();
+	await findInPage('sheepdog');
+	await expect.poll(findBarText('.matches')).toBe('1/3');
+	await pressEscapeInFindBar();
+	await expect.poll(findBarShown).toBe(false);
 });
 
-test('marks the find field and turns the arrows off when nothing matches, saying so to a screen reader', async () => {
-	await shep.window.locator('.titlebar button[aria-label="Find in page"]').click();
-	await expect(shep.window.locator('.titlebar button[aria-label="Next match"]')).toBeDisabled();
+test('drops the find bar under the title bar at the right, only as big as its panel, so the rest of the page can still be clicked', async () => {
+	await openFindBar();
+	const { findBar, content } = await shep.app.evaluate(({ BrowserWindow }) => {
+		const window = BrowserWindow.getAllWindows()[0]!;
+		const view = window.contentView.children.find(child => (child as unknown as { webContents: Electron.WebContents }).webContents.getURL().endsWith('#find'))!;
+		const [width, height] = window.getContentSize();
+		return { findBar: view.getBounds(), content: { width: width!, height: height! } };
+	});
+	expect(findBar.y).toBe(TITLE_BAR_HEIGHT);
+	expect(content.width - (findBar.x + findBar.width)).toBeLessThanOrEqual(16);
+	expect(findBar.width).toBeLessThan(content.width / 2);
+	expect(findBar.height).toBeLessThan(content.height / 4);
+	await pressEscapeInFindBar();
+});
+
+test('closes the find bar when another service comes to the front', async () => {
+	await openFindBar();
+	await shep.window.locator('.rail .service[aria-label="First"]').click();
+	await expect.poll(findBarShown).toBe(false);
+	await shep.window.locator('.rail .service[aria-label="Second"]').click();
+});
+
+test('marks the find bar and turns the arrows off when nothing matches or nothing is typed, saying so to a screen reader', async () => {
+	await openFindBar();
+	await findInPage('');
+	await expect.poll(findBarButtonDisabled('Next match')).toBe(true);
 	const wordNotOnThePage = 'wolfhound';
-	await shep.window.locator('.titlebar input[type="search"]').fill(wordNotOnThePage);
-	await expect(shep.window.locator('.titlebar .searchbox')).toHaveClass(/nothing-found/);
-	await expect(shep.window.locator('.titlebar .matches [aria-hidden="true"]')).toHaveText('0/0');
-	await expect(shep.window.locator('.titlebar .matches .spoken-only')).toHaveText('No matches');
-	await expect(shep.window.locator('.titlebar button[aria-label="Previous match"]')).toBeDisabled();
-	await expect(shep.window.locator('.titlebar button[aria-label="Next match"]')).toBeDisabled();
-	await shep.window.locator('.titlebar input[type="search"]').fill('sheepdog');
-	await expect(shep.window.locator('.titlebar .searchbox')).not.toHaveClass(/nothing-found/);
-	await expect(shep.window.locator('.titlebar button[aria-label="Next match"]')).toBeEnabled();
-	await shep.window.locator('.titlebar input[type="search"]').press('Escape');
+	await findInPage(wordNotOnThePage);
+	await expect.poll(() => inFindBar<boolean>('document.querySelector(".panel").classList.contains("nothing-found")')).toBe(true);
+	await expect.poll(findBarText('.matches [aria-hidden="true"]')).toBe('0/0');
+	await expect.poll(findBarText('.matches .spoken-only')).toBe('No matches');
+	await expect.poll(findBarButtonDisabled('Previous match')).toBe(true);
+	await expect.poll(findBarButtonDisabled('Next match')).toBe(true);
+	await findInPage('sheepdog');
+	await expect.poll(() => inFindBar<boolean>('document.querySelector(".panel").classList.contains("nothing-found")')).toBe(false);
+	await expect.poll(findBarButtonDisabled('Next match')).toBe(false);
+	await pressEscapeInFindBar();
 });
 
 test('centres the title on the window, not on the space the buttons leave', async () => {
@@ -100,7 +130,7 @@ test('centres the title on the window, not on the space the buttons leave', asyn
 	expect(Math.abs(title.x + title.width / 2 - windowWidth / 2)).toBeLessThanOrEqual(1);
 });
 
-test('covers the title with the find field in the narrowest window, so none of the title shows through', async () => {
+test('covers a long title with the title bar buttons in the narrowest window, so none of the title shows through', async () => {
 	const sizeBefore = await shep.app.evaluate(({ BrowserWindow }) => {
 		const window = BrowserWindow.getAllWindows()[0]!;
 		const [width, height] = window.getSize();
@@ -108,23 +138,25 @@ test('covers the title with the find field in the narrowest window, so none of t
 		window.setSize(narrowestWidth!, height!);
 		return { width: width!, height: height! };
 	});
-	await shep.window.locator('.titlebar button[aria-label="Find in page"]').click();
-	const title = (await shep.window.locator('.titlebar .identity').boundingBox())!;
-	const field = (await shep.window.locator('.titlebar input[type="search"]').boundingBox())!;
-	expect(title.x + title.width).toBeGreaterThan(field.x);
-	const insideFieldAndTitle = { x: Math.max(field.x, title.x) + 4, y: field.y + field.height / 2 };
-	const fieldIsOnTopOfTitle = await shep.window.evaluate(({ x, y }) => {
+	await inService(shep, at('127.0.0.1', '/long.html'), 'document.title = "(121) A page title long enough to run under the buttons at the end of the title bar"');
+	const button = (await shep.window.locator('.titlebar button[aria-label="Find in page"]').boundingBox())!;
+	const titleEnd = async () => {
+		const title = (await shep.window.locator('.titlebar .identity').boundingBox())!;
+		return title.x + title.width;
+	};
+	await expect.poll(titleEnd).toBeGreaterThan(button.x);
+	const buttonIsOnTopOfTitle = await shep.window.evaluate(({ x, y }) => {
 		const identity = document.querySelector<HTMLElement>('.titlebar .identity')!;
 		identity.style.pointerEvents = 'auto';
 		const topmost = document.elementFromPoint(x, y);
 		identity.style.pointerEvents = '';
-		return topmost?.matches('input[type="search"]') ?? false;
-	}, insideFieldAndTitle);
-	expect(fieldIsOnTopOfTitle).toBe(true);
+		return topmost?.closest('button[aria-label="Find in page"]') !== null;
+	}, { x: button.x + 4, y: button.y + button.height / 2 });
+	expect(buttonIsOnTopOfTitle).toBe(true);
 	const opaqueColour = /^rgb\(/;
-	const fieldBackdrop = await shep.window.locator('.titlebar .group.end').evaluate(group => getComputedStyle(group).backgroundColor);
-	expect(fieldBackdrop).toMatch(opaqueColour);
-	await shep.window.locator('.titlebar input[type="search"]').press('Escape');
+	const buttonsBackdrop = await shep.window.locator('.titlebar .group.end').evaluate(group => getComputedStyle(group).backgroundColor);
+	expect(buttonsBackdrop).toMatch(opaqueColour);
+	await inService(shep, at('127.0.0.1', '/long.html'), 'document.title = "(120) Long page"');
 	await shep.app.evaluate(({ BrowserWindow }, { width, height }) => BrowserWindow.getAllWindows()[0]!.setSize(width, height), sizeBefore);
 });
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Messages } from '../shared/i18n/index.ts';
-	import { services, activeService, navigate, resetZoom, find, stopFind } from './services.svelte.ts';
+	import { services, activeService, navigate, resetZoom, openFind } from './services.svelte.ts';
 	import { zoomPercent } from '../shared/zoom.ts';
 	import { pageTitleBesideName } from '../shared/service.ts';
 	import { initials } from './initials.ts';
@@ -10,35 +10,6 @@
 
 	const service = $derived(activeService());
 	const detail = $derived(services.hover || (service ? pageTitleBesideName(service.name, service.pageTitle) : ''));
-
-	let finding = $state(false);
-	let query = $state('');
-	let field = $state<HTMLInputElement>();
-	const hasMatches = $derived(Boolean(query && services.found?.matches));
-	const nothingFound = $derived(Boolean(query && services.found && !services.found.matches));
-
-	window.shep.on('titlebar:find', () => { if ( service ) openFind(); });
-
-	function openFind() {
-		finding = true;
-		queueMicrotask(() => field?.select());
-	}
-
-	function closeFind() {
-		finding = false;
-		query = '';
-		services.found = null;
-		if ( service ) stopFind(service.id);
-	}
-
-	function search(forward = true) {
-		if ( service ) find(service.id, query, forward);
-	}
-
-	function onKey(event: KeyboardEvent) {
-		if ( event.key === 'Escape' ) closeFind();
-		if ( event.key === 'Enter' ) search(!event.shiftKey);
-	}
 </script>
 
 <header class="titlebar">
@@ -66,18 +37,7 @@
 			{#if service.zoomLevel !== 0}
 				<button type="button" class="zoom" title={messages['titlebar.actualSize']} aria-label={messages['titlebar.actualSize']} onclick={() => resetZoom(service.id)}>{zoomPercent(service.zoomLevel)}%</button>
 			{/if}
-			{#if finding}
-				<div class="searchbox" class:nothing-found={nothingFound}>
-					<input bind:this={field} bind:value={query} type="search" placeholder={messages['find.placeholder']} aria-label={messages['find.placeholder']}
-						oninput={() => search()} onkeydown={onKey} />
-					<span class="matches" aria-live="polite">{#if hasMatches}{services.found?.active}/{services.found?.matches}{:else if nothingFound}<span aria-hidden="true">0/0</span><span class="spoken-only">{messages['find.none']}</span>{/if}</span>
-				</div>
-				<button type="button" title={messages['find.previous']} aria-label={messages['find.previous']} disabled={!hasMatches} onclick={() => search(false)}><Icon name="up" /></button>
-				<button type="button" title={messages['find.next']} aria-label={messages['find.next']} disabled={!hasMatches} onclick={() => search(true)}><Icon name="down" /></button>
-				<button type="button" title={messages['dialog.cancel']} aria-label={messages['dialog.cancel']} onclick={closeFind}><Icon name="close" /></button>
-			{:else}
-				<button type="button" title={messages['titlebar.find']} aria-label={messages['titlebar.find']} onclick={openFind}><Icon name="find" /></button>
-			{/if}
+			<button type="button" title={messages['titlebar.find']} aria-label={messages['titlebar.find']} onclick={openFind}><Icon name="find" /></button>
 		</div>
 	{/if}
 </header>
@@ -182,64 +142,5 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		opacity: 0.7;
-	}
-
-	.searchbox {
-		display: flex;
-		align-items: center;
-		width: 220px;
-		height: 24px;
-		margin-right: 4px;
-		border-radius: var(--rx-radius);
-		background-color: var(--rx-field-on-chrome);
-	}
-
-	.searchbox:focus-within {
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--rx-on-chrome) 60%, transparent);
-	}
-
-	.searchbox.nothing-found {
-		background-color: color-mix(in srgb, var(--rx-alert-on-chrome) 30%, transparent);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--rx-alert-on-chrome) 85%, transparent);
-	}
-
-	input {
-		flex: 1;
-		min-width: 0;
-		height: 100%;
-		padding: 0 8px;
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		outline: none;
-	}
-
-	input::-webkit-search-cancel-button {
-		appearance: none;
-	}
-
-	input::placeholder {
-		color: inherit;
-		opacity: 0.9;
-	}
-
-	.matches {
-		padding-right: 8px;
-		font-variant-numeric: tabular-nums;
-		opacity: 0.9;
-	}
-
-	.nothing-found .matches {
-		opacity: 1;
-	}
-
-	.spoken-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
 	}
 </style>

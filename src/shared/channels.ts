@@ -3,7 +3,7 @@ import type { ActiveWorkspace, Workspace } from './workspace.ts';
 export const INVOKE_CHANNELS = [
 	'app:getVersion',
 	'services:list', 'services:activate', 'services:add', 'services:update', 'services:reorder', 'services:menu', 'services:record',
-	'service:navigate', 'service:resetZoom', 'service:find', 'service:stopFind',
+	'service:navigate', 'service:resetZoom', 'find:open', 'find:search', 'find:close',
 	'overlay:open', 'overlay:close',
 	'app:state', 'app:setDontDisturb',
 	'workspaces:menu', 'workspaces:save', 'workspaces:get', 'workspaces:setIcon', 'workspaces:images',
@@ -13,7 +13,7 @@ export const INVOKE_CHANNELS = [
 
 export const APP_ACTIONS = ['reportIssue', 'clearCache', 'removeAllServices', 'checkForUpdates', 'relaunch'] as const;
 export type AppAction = (typeof APP_ACTIONS)[number];
-export const EVENT_CHANNELS = ['services:changed', 'services:certificate-error', 'services:hover', 'services:found', 'overlay:show', 'app:state', 'titlebar:find'] as const;
+export const EVENT_CHANNELS = ['services:changed', 'services:certificate-error', 'services:hover', 'overlay:show', 'app:state', 'find:open', 'find:found'] as const;
 
 export interface AppState {
 	dontDisturb: boolean;

@@ -5,6 +5,7 @@ import { withoutAppTokens } from './useragent.ts';
 import { createMainWindow } from './window.ts';
 import { ServiceHost } from './services.ts';
 import { Overlay, type OverlayDialog } from './overlay.ts';
+import { FindBar } from './findbar.ts';
 import { Workspaces } from './workspaces.ts';
 import { preferences, store } from './store.ts';
 import { resolvedLanguage } from './messages.ts';
@@ -48,6 +49,7 @@ if ( !app.requestSingleInstanceLock() ) {
 	let mainWindow: ReturnType<typeof createMainWindow> | null = null;
 	let services: ServiceHost | null = null;
 	let overlay: Overlay | null = null;
+	let findBar: FindBar | null = null;
 	let workspaces: Workspaces | null = null;
 	let prefs: PreferenceHost | null = null;
 	let tray: TrayIcon | null = null;
@@ -80,8 +82,9 @@ if ( !app.requestSingleInstanceLock() ) {
 		if ( navigation ) services?.navigate(text(id), navigation);
 	});
 	handle('service:resetZoom', (event, id) => services?.setZoom(text(id), 0));
-	handle('service:find', (event, id, query, forward) => services?.find(text(id), text(query), forward !== false));
-	handle('service:stopFind', (event, id) => services?.stopFind(text(id)));
+	handle('find:open', () => findBar?.open());
+	handle('find:search', (event, query, forward) => findBar?.search(text(query), forward !== false));
+	handle('find:close', () => findBar?.close());
 	handle('overlay:open', (event, dialog) => overlay?.open(dialog as OverlayDialog));
 	handle('overlay:close', () => overlay?.close());
 
@@ -105,6 +108,7 @@ if ( !app.requestSingleInstanceLock() ) {
 		const state = appState();
 		mainWindow?.webContents.send('app:state', state);
 		overlay?.contents()?.send('app:state', state);
+		findBar?.contents()?.send('app:state', state);
 	};
 	const setDontDisturb = (on: boolean) => {
 		services?.setDontDisturb(on);
@@ -149,6 +153,7 @@ if ( !app.requestSingleInstanceLock() ) {
 			return;
 		}
 		store.set('locked', true);
+		findBar?.close();
 		services?.setLocked(true);
 		overlay?.open({ dialog: 'lock' });
 	}
@@ -200,7 +205,7 @@ if ( !app.requestSingleInstanceLock() ) {
 		switch ( shortcut.action ) {
 			case 'service': return services?.activateNth(shortcut.index);
 			case 'cycle': return services?.cycle(shortcut.step);
-			case 'find': mainWindow?.webContents.send('titlebar:find'); mainWindow?.webContents.focus(); return;
+			case 'find': findBar?.open(); return;
 			case 'reload': return services?.reloadActive(shortcut.ignoringCache);
 			case 'zoom': return services?.zoomActive(shortcut.step);
 			case 'history': if ( active ) services?.navigate(active, shortcut.direction); return;
@@ -283,7 +288,9 @@ if ( !app.requestSingleInstanceLock() ) {
 			changed: () => {
 				tray?.setUnread(services?.somethingUnread() ?? false);
 				announceState();
+				findBar?.closeIfAnotherServiceIsActive();
 			},
+			found: (id, active, matches) => findBar?.found(id, active, matches),
 			sessionStarted: session => {
 				prefs?.followProxy(session);
 				applySpelling(session);
@@ -291,6 +298,12 @@ if ( !app.requestSingleInstanceLock() ) {
 				stripChromeVersionFromGoogleSignInHeader(session);
 			}
 		});
+		findBar = new FindBar(window, {
+			activeId: () => store.get('activeServiceId'),
+			find: (id, query, forward) => services?.find(id, query, forward),
+			stopFind: id => services?.stopFind(id),
+			focusActive: () => services?.focusActive()
+		}, contents => listenForShortcuts(contents));
 		workspaces = new Workspaces(window, services,
 			id => overlay?.open({ dialog: 'workspace', workspaceId: id }),
 			id => overlay?.open({ dialog: 'workspaceIcon', workspaceId: id }));

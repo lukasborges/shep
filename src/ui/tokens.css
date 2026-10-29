@@ -5,8 +5,6 @@
 	--rx-chrome: #24506F;
 	--rx-on-chrome: #E8F1F8;
 	--rx-hover-on-chrome: rgba(255, 255, 255, 0.10);
-	--rx-field-on-chrome: rgba(255, 255, 255, 0.12);
-	--rx-alert-on-chrome: #F66151;
 	--rx-radius: 6px;
 	color-scheme: light dark;
 	font-family: system-ui, -apple-system, 'Cantarell', 'Ubuntu', sans-serif;

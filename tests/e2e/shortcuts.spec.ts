@@ -1,7 +1,7 @@
 import type { Server } from 'node:http';
 import { test, expect } from '@playwright/test';
 import type { ServiceState } from '../../src/shared/service.ts';
-import { launchShep, closeShep, inService, serviceRecord, COMMAND, type Shep } from './helpers/launch.ts';
+import { launchShep, closeShep, inService, inViewOverServices, viewOverServicesShown, serviceRecord, COMMAND, type Shep } from './helpers/launch.ts';
 import { serveFixtures } from './helpers/server.ts';
 
 let shep: Shep;
@@ -53,8 +53,10 @@ test('cycles through the services with Ctrl+Tab and back with Ctrl+Shift+Tab', a
 
 test('opens find in page with Ctrl+F from inside the service', async () => {
 	await press(first(), 'F', [COMMAND]);
-	await expect(shep.window.locator('.titlebar input[type="search"]')).toBeVisible();
-	await shep.window.locator('.titlebar input[type="search"]').press('Escape');
+	await expect.poll(() => viewOverServicesShown(shep, '#find')).toBe(true);
+	await expect.poll(() => inViewOverServices<boolean>(shep, '#find', 'document.activeElement?.matches(\'input[type="search"]\') ?? false')).toBe(true);
+	await inViewOverServices(shep, '#find', 'window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))');
+	await expect.poll(() => viewOverServicesShown(shep, '#find')).toBe(false);
 });
 
 test('zooms the active service with Ctrl+= and resets it with Ctrl+0, keeping the level', async () => {
