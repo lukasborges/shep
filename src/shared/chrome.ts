@@ -1,5 +1,6 @@
 export const TITLE_BAR_HEIGHT = 32;
 export const RAIL_WIDTH = 68;
+export const PAGE_CORNER_RADIUS = 8;
 
 // The rail and the title bar, which the system's window buttons are painted over,
 // so main needs the same values as the stylesheet.

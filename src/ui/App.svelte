@@ -36,10 +36,14 @@
 		display: grid;
 		grid-template-columns: var(--rx-rail-width) 1fr;
 		min-height: 0;
+		background-color: var(--rx-chrome);
 	}
 
 	.content {
 		position: relative;
 		min-width: 0;
+		overflow: hidden;
+		border-radius: var(--rx-page-corner);
+		background-color: var(--rx-surface);
 	}
 </style>

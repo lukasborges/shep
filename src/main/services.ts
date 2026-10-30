@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { app, dialog, Menu, session, WebContentsView, type BrowserWindow, type WebContents } from 'electron';
-import { RAIL_WIDTH, TITLE_BAR_HEIGHT } from '../shared/chrome.ts';
+import { PAGE_CORNER_RADIUS, RAIL_WIDTH, TITLE_BAR_HEIGHT } from '../shared/chrome.ts';
 import { nameFromUrl, normalizeUrl } from '../shared/address.ts';
 import { onlyServiceInSessionOrOnOrigin, partitionOf, type Navigation, type ServiceRecord, type ServiceState, type UnreadCount } from '../shared/service.ts';
 import { preferences, store, updateService } from './store.ts';
@@ -381,7 +381,10 @@ export class ServiceHost {
 		const contentArea = { x: RAIL_WIDTH, y: TITLE_BAR_HEIGHT, width: Math.max(0, width - RAIL_WIDTH), height: Math.max(0, height - TITLE_BAR_HEIGHT) };
 		// a page in its own full screen covers the rail and the title bar too, as it would in a browser
 		const wholeWindow = { x: 0, y: 0, width, height };
-		this.running.forEach(service => service.view.setBounds(service.pageFullScreen ? wholeWindow : contentArea));
+		this.running.forEach(service => {
+			service.view.setBounds(service.pageFullScreen ? wholeWindow : contentArea);
+			service.view.setBorderRadius(service.pageFullScreen ? 0 : PAGE_CORNER_RADIUS);
+		});
 	}
 
 	private announce(): void {
