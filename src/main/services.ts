@@ -26,6 +26,7 @@ import { isShownIn, type ActiveWorkspace } from '../shared/workspace.ts';
 interface RunningService {
 	view: WebContentsView;
 	unread: UnreadCount;
+	notifiedSinceSeen: boolean;
 	pageTitle: string;
 	// a video or slides the page itself put in full screen
 	pageFullScreen: boolean;
@@ -50,6 +51,7 @@ export class ServiceHost {
 
 	constructor(private readonly window: BrowserWindow, private readonly events: ServiceHostEvents) {
 		window.on('resize', () => this.layout());
+		window.on('focus', () => { if ( this.markSeen(store.get('activeServiceId')) ) this.announce(); });
 		window.on('closed', () => this.running.forEach(service => service.disposeBlinkGuard()));
 	}
 
@@ -89,6 +91,7 @@ export class ServiceHost {
 				favicon: record.favicon,
 				enabled: record.enabled,
 				unread: running?.unread ?? 0,
+				notifiedSinceSeen: running?.notifiedSinceSeen ?? false,
 				pageTitle: running?.pageTitle ?? '',
 				active: record.id === active,
 				canGoBack: history?.canGoBack() ?? false,
@@ -107,7 +110,16 @@ export class ServiceHost {
 		this.activate(store.get('activeServiceId'));
 	}
 
+	noteNotification(id: string): void {
+		const running = this.running.get(id);
+		const seen = !this.locked && this.window.isFocused() && store.get('activeServiceId') === id;
+		if ( !running || seen ) return;
+		running.notifiedSinceSeen = true;
+		this.announce();
+	}
+
 	activate(id: string | null): void {
+		this.markSeen(id);
 		store.set('activeServiceId', id);
 		this.running.forEach((service, serviceId) => service.view.setVisible(!this.locked && serviceId === id));
 		this.layout();
@@ -387,6 +399,13 @@ export class ServiceHost {
 		});
 	}
 
+	private markSeen(id: string | null): boolean {
+		const running = id ? this.running.get(id) : undefined;
+		if ( this.locked || !running?.notifiedSinceSeen ) return false;
+		running.notifiedSinceSeen = false;
+		return true;
+	}
+
 	private announce(): void {
 		if ( this.window.isDestroyed() ) return;
 		this.window.webContents.send('services:changed', this.list());
@@ -421,7 +440,7 @@ export class ServiceHost {
 			if ( running ) running.unread = count;
 			this.announce();
 		});
-		this.running.set(record.id, { view, unread: 0, pageTitle: '', pageFullScreen: false, disposeBlinkGuard: blinkGuard.dispose });
+		this.running.set(record.id, { view, unread: 0, notifiedSinceSeen: false, pageTitle: '', pageFullScreen: false, disposeBlinkGuard: blinkGuard.dispose });
 
 		const partition = partitionOf(record);
 		if ( !this.startedPartitions.has(partition) ) {

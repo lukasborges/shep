@@ -121,6 +121,20 @@ test('keeps a hidden service counting, on its workspace\'s tab, and leaves the c
 	await expect(tab('Personal').locator('.badge')).toHaveCount(0, { timeout: 5000 });
 });
 
+test('marks the icon of a service that notified out of sight, even with its notifications off, but not its workspace\'s tab, until the service is on screen', async () => {
+	const family = () => shep.window.locator('.rail .service[aria-label="Family"]');
+	const familyNotified = async () => (await list()).find(service => service.name === 'Family')?.notifiedSinceSeen;
+	await inService(shep, at('127.0.0.1', '/away.html'), 'new Notification("Somewhere else"), null');
+	await expect.poll(familyNotified).toBe(true);
+	await expect(tab('Personal').locator('.badge')).toHaveCount(0);
+	await tab('All Services').click();
+	await expect(family().locator('.badge.dot')).toBeVisible();
+	await family().click();
+	await expect(family().locator('.badge')).toHaveCount(0);
+	expect(await familyNotified()).toBe(false);
+	await tab('Work').click();
+});
+
 test('offers what can be done to a workspace on its tab\'s right click, and only a new one on All Services\'', async () => {
 	expect((await templateOfNativeMenuOpenedBy(tabMenuOf('Personal'))).map(item => item.label)).toEqual(['Rename…', 'Change Icon…', '---', 'New Workspace…', '---', 'Delete']);
 	expect((await templateOfNativeMenuOpenedBy(tabMenuOf('All Services'))).map(item => item.label)).toEqual(['New Workspace…']);

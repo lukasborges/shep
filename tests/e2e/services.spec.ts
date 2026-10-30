@@ -237,6 +237,7 @@ test('keeps running when a removed service\'s page asks for something after it i
 		other = await launchShep({ store: { services: [serviceRecord('3', at('127.0.0.1', '/service.html'))], activeServiceId: '3' } });
 		const app = other;
 		await expect.poll(() => app.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL() === url), at('127.0.0.1', '/service.html'))).toBe(true);
+		await expect.poll(async () => ((await app.window.evaluate(() => window.shep.invoke('services:list'))) as ServiceState[])[0]?.favicon).toBeTruthy();
 		// the store reads its file on every get, so this is the service gone while its page lives on
 		await app.app.evaluate(({ app: electronApp }) => {
 			const fs = process.getBuiltinModule('node:fs');

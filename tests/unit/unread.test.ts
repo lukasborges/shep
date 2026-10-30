@@ -1,6 +1,7 @@
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { countFromTitle, createBlinkGuard, totalUnread, TITLE_BLINK_GRACE_MS, type UnreadCount } from '../../src/main/unread.ts';
+import { unreadWithNotification } from '../../src/shared/service.ts';
 
 test('reads the count in the shapes services write it in the title', () => {
 	const titles = ['(3) WhatsApp', 'Inbox (12) - someone@gmail.com - Gmail', '(1.234) Feed', '(99+) Chat', '(•) Chat', 'Discord', '(Draft) Notes'];
@@ -23,6 +24,13 @@ test('believes a drop to nothing only once it has lasted, since some services bl
 	mock.timers.tick(TITLE_BLINK_GRACE_MS);
 	assert.deepEqual(reported, [4, 4, 0]);
 	mock.timers.reset();
+});
+
+test('says there is something in a service that notified since it was last seen, unless its title already counts it', () => {
+	assert.equal(unreadWithNotification(0, true), '•');
+	assert.equal(unreadWithNotification(0, false), 0);
+	assert.equal(unreadWithNotification(4, true), 4);
+	assert.equal(unreadWithNotification('•', false), '•');
 });
 
 test('leaves a service that only says there is something out of the total', () => {

@@ -6,6 +6,10 @@ export type Navigation = (typeof NAVIGATIONS)[number];
 // '•' is a title saying there is something without saying how much.
 export type UnreadCount = number | '•';
 
+export function unreadWithNotification(fromTitle: UnreadCount, notifiedSinceSeen: boolean): UnreadCount {
+	return notifiedSinceSeen && fromTitle !== '•' && fromTitle <= 0 ? '•' : fromTitle;
+}
+
 export const SHARED_PARTITION = 'persist:shared';
 
 export const workspacePartition = (workspace: string) => workspace ? `persist:workspace-${workspace}` : SHARED_PARTITION;
@@ -53,6 +57,7 @@ export interface ServiceState {
 	favicon: string;
 	enabled: boolean;
 	unread: UnreadCount;
+	notifiedSinceSeen: boolean;
 	pageTitle: string;
 	active: boolean;
 	canGoBack: boolean;

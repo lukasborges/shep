@@ -208,6 +208,10 @@ if ( !app.requestSingleInstanceLock() ) {
 		bringForward();
 		if ( id ) services?.activate(id);
 	});
+	ipcMain.on('service:notified', event => {
+		const id = services?.idOf(event.sender);
+		if ( id ) services?.noteNotification(id);
+	});
 	ipcMain.on('service:may-notify', event => {
 		const id = services?.idOf(event.sender);
 		event.returnValue = id ? services?.mayNotify(id) ?? false : false;

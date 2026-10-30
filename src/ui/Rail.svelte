@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Messages } from '../shared/i18n/index.ts';
-	import type { ServiceState } from '../shared/service.ts';
+	import { unreadWithNotification, type ServiceState } from '../shared/service.ts';
 	import { services, appState, activate, lockApp, openAddDialog, openPreferences, reorder, setDontDisturb, showServiceMenu } from './services.svelte.ts';
 	import { initials } from './initials.ts';
 	import { SERVICE_DRAG_TYPE } from './dragging.ts';
@@ -14,10 +14,13 @@
 	let preview = $state<ServiceState[] | null>(null);
 	const shown = $derived((preview ?? services.list).filter(service => service.shown));
 
+	const unreadOnIcon = (service: ServiceState) => unreadWithNotification(service.unread, service.notifiedSinceSeen);
+
 	function badge(service: ServiceState): string {
-		if ( service.unread === '•' ) return '•';
-		if ( service.unread <= 0 ) return '';
-		return service.unread > MAX_SHOWN_COUNT ? MAX_SHOWN_COUNT + '+' : String(service.unread);
+		const unread = unreadOnIcon(service);
+		if ( unread === '•' ) return '•';
+		if ( unread <= 0 ) return '';
+		return unread > MAX_SHOWN_COUNT ? MAX_SHOWN_COUNT + '+' : String(unread);
 	}
 
 	function dragOver(event: DragEvent, over: string) {
@@ -41,6 +44,7 @@
 
 <nav class="rail" aria-label="Services">
 	{#each shown as service (service.id)}
+		{@const badgeText = badge(service)}
 		<button class="service" class:active={service.active} class:disabled={!service.enabled} class:dragged={dragged === service.id}
 			type="button" draggable="true" title={service.name} aria-label={service.name} aria-current={service.active ? 'page' : undefined}
 			onclick={() => activate(service.id)}
@@ -55,8 +59,8 @@
 				{:else}
 					<span class="initials">{initials(service.name)}</span>
 				{/if}
-				{#if badge(service)}
-					<span class="badge" class:dot={service.unread === '•'} aria-label="{service.unread} unread">{service.unread === '•' ? '' : badge(service)}</span>
+				{#if badgeText}
+					<span class="badge" class:dot={badgeText === '•'} aria-label="{unreadOnIcon(service)} unread">{badgeText === '•' ? '' : badgeText}</span>
 				{/if}
 			</span>
 		</button>

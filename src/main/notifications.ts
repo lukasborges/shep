@@ -9,6 +9,7 @@ export const NOTIFICATION_WRAPPER = `(() => {
 	const Native = window.Notification;
 	const inert = () => Object.assign(new EventTarget(), { close() {}, onclick: null, onclose: null, onerror: null, onshow: null });
 	function Wrapped(title, options) {
+		window.shepService.notified();
 		if ( !window.shepService.mayNotify() ) return inert();
 		const notification = new Native(title, options);
 		notification.addEventListener('click', () => window.shepService.notificationClicked());
