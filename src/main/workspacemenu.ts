@@ -1,9 +1,9 @@
 import type { ActiveWorkspace, Workspace } from '../shared/workspace.ts';
+import type { UnreadCount } from '../shared/service.ts';
 import type { NativeImage } from 'electron';
 import type { Messages } from '../shared/i18n/index.ts';
 
-export interface WorkspaceMenuActions {
-	choose(id: ActiveWorkspace): void;
+export interface WorkspaceTabActions {
 	create(): void;
 	rename(id: string): void;
 	changeIcon(id: string): void;
@@ -12,8 +12,7 @@ export interface WorkspaceMenuActions {
 
 export interface WorkspaceMenuItem {
 	label?: string;
-	type?: 'separator' | 'radio';
-	checked?: boolean;
+	type?: 'separator';
 	accelerator?: string;
 	icon?: NativeImage | string;
 	click?: () => void;
@@ -22,21 +21,28 @@ export interface WorkspaceMenuItem {
 const SEPARATOR: WorkspaceMenuItem = { type: 'separator' };
 const NUMBERED_SHORTCUTS = 9;
 
-export function workspaceMenu(workspaces: readonly Workspace[], active: ActiveWorkspace, actions: WorkspaceMenuActions, messages: Messages, imageOf: (id: ActiveWorkspace) => NativeImage | string | undefined = () => undefined): WorkspaceMenuItem[] {
-	const shortcut = (index: number) => index < NUMBERED_SHORTCUTS ? `CommandOrControl+Alt+${index + 1}` : undefined;
-	const choices: WorkspaceMenuItem[] = [
-		...workspaces.map((workspace, index) => ({
-			label: workspace.name, type: 'radio' as const, checked: workspace.id === active, accelerator: shortcut(index), icon: imageOf(workspace.id), click: () => actions.choose(workspace.id)
-		})),
-		{ label: messages['menu.allServices'], type: 'radio', checked: active === null, accelerator: shortcut(workspaces.length), icon: imageOf(null), click: () => actions.choose(null) }
+export function workspaceTabMenu(id: ActiveWorkspace, actions: WorkspaceTabActions, messages: Messages): WorkspaceMenuItem[] {
+	const creating: WorkspaceMenuItem = { label: messages['menu.newWorkspace'], click: actions.create };
+	if ( id === null ) return [creating];
+	return [
+		{ label: messages['menu.renameWorkspace'], click: () => actions.rename(id) },
+		{ label: messages['menu.changeIcon'], click: () => actions.changeIcon(id) },
+		SEPARATOR,
+		creating,
+		SEPARATOR,
+		{ label: messages['menu.deleteWorkspace'], click: () => actions.remove(id) }
 	];
-	const managing: WorkspaceMenuItem[] = [{ label: messages['menu.newWorkspace'], click: actions.create }];
-	if ( active !== null ) {
-		managing.push(
-			{ label: messages['menu.renameWorkspace'], click: () => actions.rename(active) },
-			{ label: messages['menu.changeIcon'], click: () => actions.changeIcon(active) },
-			{ label: messages['menu.deleteWorkspace'], click: () => actions.remove(active) }
-		);
-	}
-	return [...choices, SEPARATOR, ...managing];
+}
+
+export function hiddenWorkspacesMenu(workspaces: readonly Workspace[], hidden: readonly string[], unreadOf: (id: string) => UnreadCount, choose: (id: string) => void, imageOf: (id: string) => NativeImage | string | undefined = () => undefined): WorkspaceMenuItem[] {
+	return workspaces.flatMap((workspace, index) => {
+		if ( !hidden.includes(workspace.id) ) return [];
+		const unread = unreadOf(workspace.id);
+		return [{
+			label: unread === '•' || unread > 0 ? `${workspace.name} (${unread})` : workspace.name,
+			accelerator: index < NUMBERED_SHORTCUTS ? `CommandOrControl+Alt+${index + 1}` : undefined,
+			icon: imageOf(workspace.id),
+			click: () => choose(workspace.id)
+		}];
+	});
 }

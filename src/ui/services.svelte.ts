@@ -1,8 +1,9 @@
 import type { Navigation, ServiceState } from '../shared/service.ts';
 import type { AppState } from '../shared/channels.ts';
+import type { ActiveWorkspace } from '../shared/workspace.ts';
 import { workspaceImages } from './workspaceImages.ts';
 
-export const appState = $state<AppState>({ dontDisturb: false, workspaces: [], activeWorkspace: null, unreadElsewhere: false, language: '' });
+export const appState = $state<AppState>({ dontDisturb: false, workspaces: [], activeWorkspace: null, language: '' });
 
 export const services = $state<{ list: ServiceState[]; hover: string }>({
 	list: [],
@@ -48,6 +49,12 @@ export const navigate = (id: string, where: Navigation) => window.shep.invoke('s
 export const resetZoom = (id: string) => window.shep.invoke('service:resetZoom', id);
 export const openFind = () => window.shep.invoke('find:open');
 export const setDontDisturb = (on: boolean) => window.shep.invoke('app:setDontDisturb', on);
-export const showWorkspaceMenu = () => window.shep.invoke('workspaces:menu');
+export const chooseWorkspace = (id: ActiveWorkspace) => window.shep.invoke('workspaces:choose', id);
+export const showWorkspaceTabMenu = (id: ActiveWorkspace) => window.shep.invoke('workspaces:tabMenu', id);
+export const showHiddenWorkspaces = (ids: string[], x: number, y: number) => window.shep.invoke('workspaces:hiddenMenu', ids, x, y);
+export const saveWorkspaceOrder = (ids: string[]) => window.shep.invoke('workspaces:reorder', ids);
+export const renameWorkspace = (id: string, name: string) => window.shep.invoke('workspaces:save', id, name);
+export const moveServiceToWorkspace = (id: string, workspace: string) => window.shep.invoke('services:moveToWorkspace', id, workspace);
+export const openNewWorkspaceDialog =() => window.shep.invoke('overlay:open', { dialog: 'workspace', workspaceId: null });
 export const openPreferences = () => window.shep.invoke('overlay:open', { dialog: 'preferences' });
 export const lockApp = () => window.shep.invoke('app:lock');

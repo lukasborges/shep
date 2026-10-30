@@ -9,7 +9,7 @@
   <img src="./resources/screenshots/shep-1.0-dark.png" width="49%" alt="The same window in the dark theme" />
 </p>
 
-Shep keeps WhatsApp, Gmail, Slack, Teams, Claude or anything else with a web address in a rail down the left of one window, signed in once for all of them or apart, each counting what is unread. It runs on Linux, Windows and macOS.
+Shep keeps WhatsApp, Gmail, Slack, Teams, Claude or anything else with a web address in a rail down the left of one window, signed in once per workspace, each counting what is unread. It runs on Linux, Windows and macOS.
 
 ## How it works
 
@@ -20,10 +20,10 @@ Press `+` and pick a service from the list, or type any address; either way, tha
 - **The unread count comes from the page title**, the `(3)` most web apps put in front of it. A title that says there is something without a number, `(•)`, draws a dot.
 - **Links stay in the app.** A link to another site opens in a window of Shep's that shares the service's session, so it is already signed in. When a sign-in there finishes back on the service, the window closes and the service carries on. A link to the site of another service you added opens in that service instead, brought forward with its workspace. To open a link in your browser, click it with `Ctrl` (`⌘` on a Mac) or the middle button, or pick Open Link in Browser from the right click.
 - **Pages see a browser**: the Chromium Shep is built on, with nothing of Shep or Electron in its user agent, which is what sign-ins and captchas check for.
-- **The page in view is driven from the title bar**: back, forward, reload, home to the address it was added with, and find. A zoom other than 100% shows there too, and a click puts it back.
+- **The page in view is driven from the title bar**: back, forward, reload, home to the address it was added with, and find. A zoom other than 100% shows there too, and a click puts it back. Where a link under the pointer leads shows there as well, and the page's title is the window's, which the taskbar and the window switcher show.
 - **The service itself is on its right click in the rail**: reload, notifications, sound, disable, edit, move to a workspace, remove.
 
-Services can be grouped into **workspaces**, one on screen at a time, switched from the top of the rail. The ones out of sight keep running, counting and notifying, and the switcher shows a dot when one of them has something new.
+Services can be grouped into **workspaces**, one on screen at a time, each a tab in the title bar. The last tab, All Services, shows every service. Every service is in a workspace. The first workspace is created with the first service, under a name the add dialog suggests, and deleting a workspace asks where its services go. The ones out of sight keep running, counting and notifying, and each tab shows what its workspace has unread. A tab is renamed in place with a double click or `F2`, reordered by dragging it, and given a service by dragging the service's icon onto it from the rail; its right click also changes its icon or deletes it. When the window is too narrow for every tab, the tabs lose their names one at a time from the right, and then the last ones go behind a button that lists them.
 
 Shep also has a do-not-disturb switch, a lock screen with a password, an icon in the system tray, spell checking, screen sharing through the system's own picker on Wayland and on macOS 15 and later, and through Shep's own everywhere else, and a report of what each service's title says, for when a count looks wrong. It speaks English, Portuguese, Spanish, French, German, Italian, Russian, Japanese, Chinese and Korean.
 
@@ -32,6 +32,8 @@ Shep also has a do-not-disturb switch, a lock screen with a password, an icon in
 [Releases](https://github.com/lukasborges/shep/releases) carry an AppImage, a deb and a tarball for x86-64 Linux, an installer and a zip for x86-64 Windows, and a disk image and a zip for Macs with Apple silicon or Intel. Shep updates itself from those releases on Linux and Windows; on a Mac, Check for Updates opens the latest release.
 
 Shep 1.0 is a new app and starts from a clean profile. Services added in 0.10 have to be added again.
+
+Up to 1.5.1 a service could sign in apart from the others; now each workspace signs in on its own. The first start after the update gives each workspace a copy of the session its services used, or of the shared one when they used more than one. Services that were in no workspace go into a new one, Personal. A service that signed in apart has to sign in again if it now shares a workspace with other services.
 
 ### Linux
 
@@ -69,7 +71,7 @@ On a Mac, `⌘` takes the place of `Ctrl`, and `⌥` of `Alt`, except where the 
 
 ## Privacy
 
-There is no account and no server. Shep keeps your services, workspaces and preferences in `~/.config/Shep/shep.json`, on Windows `%APPDATA%\Shep\shep.json`, on a Mac `~/Library/Application Support/Shep/shep.json`, and the sessions beside it: the one the services share, so a site you sign in to once is signed in for every service on it, and one of its own for each service set to sign in apart from the other services, which holds a second account of a site. You stay signed in until no service is left in a session, which deletes it.
+There is no account and no server. Shep keeps your services, workspaces and preferences in `~/.config/Shep/shep.json`, on Windows `%APPDATA%\Shep\shep.json`, on a Mac `~/Library/Application Support/Shep/shep.json`, and the sessions beside it, one for each workspace. The services in a workspace share its session, so a site you sign in to once is signed in for every service on it there. A second account of a site goes in a workspace of its own, and a service moved to another workspace takes that workspace's sign-ins. You stay signed in until no service is left in a session, which deletes it.
 
 Shep sends nothing about you anywhere. It makes two requests of its own: the update check, to this repository's releases on GitHub, and the download of a spell-checking dictionary the first time a language needs one, which Chromium fetches from Google. What each service does is up to the service: Shep is a frame around its web app and does not look inside.
 

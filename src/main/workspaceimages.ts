@@ -1,5 +1,5 @@
 import { nativeImage, type NativeImage } from 'electron';
-import { ALL_SERVICES_IMAGE, acceptWorkspaceImages } from '../shared/workspaceimages.ts';
+import { acceptWorkspaceImages } from '../shared/workspaceimages.ts';
 
 let images = new Map<string, NativeImage>();
 
@@ -13,6 +13,6 @@ export function setWorkspaceImages(sent: unknown, workspaceIds: readonly string[
 	}));
 }
 
-export function workspaceImage(id: string | null): NativeImage | undefined {
-	return images.get(id ?? ALL_SERVICES_IMAGE);
+export function workspaceImage(id: string): NativeImage | undefined {
+	return images.get(id);
 }

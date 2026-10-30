@@ -1,5 +1,5 @@
 import type { Workspace } from '../shared/workspace.ts';
-import { ALL_SERVICES_IMAGE, WORKSPACE_IMAGE_PIXELS as SIZE } from '../shared/workspaceimages.ts';
+import { WORKSPACE_IMAGE_PIXELS as SIZE } from '../shared/workspaceimages.ts';
 import { WORKSPACE_ICON_NODES } from './workspaceIcons.ts';
 import { initials } from './initials.ts';
 
@@ -19,14 +19,6 @@ function avatarSvg(workspace: Workspace): string {
 	return `<rect width="${SIZE}" height="${SIZE}" rx="${SIZE * 0.27}" fill="${token(`--rx-deep-hue-${workspace.hue}`)}"/>${drawing}`;
 }
 
-// The switcher's four squares, white on a grey tile as the workspaces' glyphs are on theirs.
-function allServicesSvg(): string {
-	const square = (x: number, y: number) => `<rect x="${x}" y="${y}" width="${SIZE * 0.22}" height="${SIZE * 0.22}" rx="${SIZE * 0.05}" fill="#FFFFFF"/>`;
-	const [near, far] = [SIZE * 0.25, SIZE * 0.53];
-	return `<rect width="${SIZE}" height="${SIZE}" rx="${SIZE * 0.27}" fill="${token('--rx-deep-neutral')}"/>`
-		+ square(near, near) + square(far, near) + square(near, far) + square(far, far);
-}
-
 async function png(drawing: string): Promise<string> {
 	const image = new Image(SIZE, SIZE);
 	image.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}">${drawing}</svg>`);
@@ -39,5 +31,5 @@ async function png(drawing: string): Promise<string> {
 
 export async function workspaceImages(workspaces: readonly Workspace[]): Promise<Record<string, string>> {
 	const drawn = await Promise.all(workspaces.map(async workspace => [workspace.id, await png(avatarSvg(workspace))] as const));
-	return Object.fromEntries([...drawn, [ALL_SERVICES_IMAGE, await png(allServicesSvg())]]);
+	return Object.fromEntries(drawn);
 }

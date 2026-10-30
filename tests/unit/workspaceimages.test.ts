@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ALL_SERVICES_IMAGE, acceptWorkspaceImages } from '../../src/shared/workspaceimages.ts';
+import { acceptWorkspaceImages } from '../../src/shared/workspaceimages.ts';
 
 const png = 'data:image/png;base64,iVBORw0KGgo=';
 
-test('takes a PNG for each workspace there is, and one for All Services', () => {
-	assert.deepEqual(acceptWorkspaceImages({ w1: png, [ALL_SERVICES_IMAGE]: png }, ['w1', 'w2']), { w1: png, [ALL_SERVICES_IMAGE]: png });
+test('takes a PNG for each workspace there is', () => {
+	assert.deepEqual(acceptWorkspaceImages({ w1: png, w2: png }, ['w1', 'w2']), { w1: png, w2: png });
 });
 
 test('refuses what the interface sends for a workspace that is gone, or that is not a PNG', () => {

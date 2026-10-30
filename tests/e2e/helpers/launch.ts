@@ -12,8 +12,7 @@ export interface Shep {
 }
 
 // A profile of its own per launch, or the run would read the developer's services and talk to the network.
-export async function launchShep({ store }: { store?: Record<string, unknown> } = {}): Promise<Shep> {
-	const userDataDir = mkdtempSync(join(tmpdir(), 'shep-next-test-'));
+export async function launchShep({ store, userDataDir = mkdtempSync(join(tmpdir(), 'shep-next-test-')) }: { store?: Record<string, unknown>; userDataDir?: string } = {}): Promise<Shep> {
 	if ( store ) writeFileSync(join(userDataDir, 'shep.json'), JSON.stringify(store));
 
 	const app = await _electron.launch({
@@ -37,7 +36,7 @@ export async function closeShep(shep: Shep | undefined): Promise<void> {
 
 export function serviceRecord(id: string, url: string, overrides: Record<string, unknown> = {}) {
 	return {
-		id, name: 'Service ' + id, url, partition: `persist:service-${id}`, workspace: '', enabled: true,
+		id, name: 'Service ' + id, url, workspace: '', enabled: true,
 		notifications: false, muted: true, media: false, trust: false, zoomLevel: 0, favicon: '', ...overrides
 	};
 }

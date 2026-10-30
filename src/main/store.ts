@@ -4,11 +4,12 @@ import type { ActiveWorkspace, Workspace } from '../shared/workspace.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '../shared/preferences.ts';
 import type { WindowBounds } from './window.ts';
 
+export type RememberedPermissionKey = `persist:service-${string}|${string}`;
+
 interface Schema {
 	services: ServiceRecord[];
 	activeServiceId: string | null;
-	// partition|permission → the answer the person gave once
-	permissions: Record<string, boolean>;
+	permissions: Record<RememberedPermissionKey, boolean>;
 	dontDisturb: boolean;
 	workspaces: Workspace[];
 	activeWorkspace: ActiveWorkspace;

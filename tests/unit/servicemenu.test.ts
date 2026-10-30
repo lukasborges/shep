@@ -24,18 +24,17 @@ test('keeps only what can be done to a disabled service, which has no page', () 
 	assert.deepEqual(labels({ ...running, enabled: false }), ['Notifications', 'Sound', 'Enabled', '---', 'Edit…', 'Remove…']);
 });
 
-test('moves a service to a workspace, or to all of them, in one radio group with the current one ticked', () => {
-	const withWorkspaces = { ...running, workspaces: [{ id: 'w1', name: 'Work' }], workspace: 'w1' };
+test('moves a service to another workspace in one radio group with its own ticked, and offers no move with only one workspace', () => {
+	const withWorkspaces = { ...running, workspaces: [{ id: 'w1', name: 'Work' }, { id: 'w2', name: 'Home' }], workspace: 'w1' };
 	const submenu = serviceMenu(withWorkspaces, actions, en).find(item => item.label === 'Move to Workspace')?.submenu ?? [];
-	assert.deepEqual(submenu.map(item => `${item.label}${item.checked ? ' ✓' : ''}`), ['Work ✓', 'All Workspaces']);
-	assert.equal(submenu.some(item => item.type === 'separator'), false);
+	assert.deepEqual(submenu.map(item => `${item.label}${item.checked ? ' ✓' : ''}`), ['Work ✓', 'Home']);
 	submenu[1]?.click?.();
-	assert.deepEqual(moved, ['']);
-	assert.equal(labels(running).includes('Move to Workspace'), false);
+	assert.deepEqual(moved, ['w2']);
+	assert.equal(labels({ ...running, workspaces: [{ id: 'w1', name: 'Work' }], workspace: 'w1' }).includes('Move to Workspace'), false);
 });
 
-test('shows each workspace\'s image in Move to Workspace, and none beside All Workspaces, which is not one', () => {
+test('shows each workspace\'s image in Move to Workspace', () => {
 	const withImages = { ...running, workspaces: [{ id: 'w1', name: 'Work', image: 'image of w1' }, { id: 'w2', name: 'Home' }], workspace: 'w1' };
 	const submenu = serviceMenu(withImages, actions, en).find(item => item.label === 'Move to Workspace')?.submenu ?? [];
-	assert.deepEqual(submenu.map(item => item.icon), ['image of w1', undefined, undefined]);
+	assert.deepEqual(submenu.map(item => item.icon), ['image of w1', undefined]);
 });

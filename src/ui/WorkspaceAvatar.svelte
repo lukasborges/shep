@@ -3,12 +3,14 @@
 	import { WORKSPACE_ICON_NODES } from './workspaceIcons.ts';
 	import { initials } from './initials.ts';
 
-	const { name, hue, icon = null, size = 34, onRail = false }: { name: string; hue: WorkspaceHue; icon?: WorkspaceIcon | null; size?: number; onRail?: boolean } = $props();
+	const { name, hue, icon = null, size = 34, onChrome = false }: { name: string; hue: WorkspaceHue; icon?: WorkspaceIcon | null; size?: number; onChrome?: boolean } = $props();
+
+	const SMALLEST_READABLE_INITIALS = 9;
 
 	const glyph = $derived(Math.round(size * 0.55));
 </script>
 
-<span class="avatar" style:width="{size}px" style:height="{size}px" style:--hue="var(--rx-{onRail ? 'rail-' : ''}hue-{hue})" style:--tint="var(--rx-tint-{hue})">
+<span class="avatar" class:on-chrome={onChrome} style:width="{size}px" style:height="{size}px" style:--hue="var(--rx-{onChrome ? 'deep-' : ''}hue-{hue})" style:--tint="var(--rx-tint-{hue})">
 	{#if icon}
 		<svg width={glyph} height={glyph} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 			{#each WORKSPACE_ICON_NODES[icon] as [tag, attributes], index (index)}
@@ -16,7 +18,7 @@
 			{/each}
 		</svg>
 	{:else}
-		<span class="initials" style:font-size="{Math.round(size * 0.36)}px">{initials(name)}</span>
+		<span class="initials" style:font-size="{Math.max(SMALLEST_READABLE_INITIALS,Math.round(size * 0.36))}px">{initials(name)}</span>
 	{/if}
 </span>
 
@@ -28,6 +30,11 @@
 		border-radius: 27%;
 		background-color: var(--tint);
 		color: var(--hue);
+	}
+
+	.avatar.on-chrome {
+		background-color: var(--hue);
+		color: #FFFFFF;
 	}
 
 	.initials {

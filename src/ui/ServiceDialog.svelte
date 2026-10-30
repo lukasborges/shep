@@ -1,18 +1,17 @@
 <script lang="ts">
 	import type { Messages } from '../shared/i18n/index.ts';
-	import { hasOwnSession, type ServiceRecord } from '../shared/service.ts';
+	import type { ServiceRecord } from '../shared/service.ts';
 	import { normalizeUrl } from '../shared/address.ts';
 	import type { AppState } from '../shared/channels.ts';
 	import { CATALOGUE, CATALOGUE_GROUPS, matchCatalogue, type CatalogueEntry } from '../shared/catalogue.ts';
 	import { initials } from './initials.ts';
-	import Switch from './Switch.svelte';
 
 	const { messages, serviceId, onclose }: { messages: Messages; serviceId: string | null; onclose: () => void } = $props();
 
 	let address = $state('');
 	let name = $state('');
 	let workspace = $state('');
-	let ownSession = $state(false);
+	let firstWorkspaceName = $state('');
 	let appNow = $state<AppState | null>(null);
 	let touched = $state(false);
 	let addressField = $state<HTMLInputElement>();
@@ -49,7 +48,8 @@
 		addressField?.focus();
 		window.shep.invoke('app:state').then(current => {
 			appNow = current as AppState;
-			if ( !serviceId ) workspace = appNow.activeWorkspace ?? '';
+			if ( !serviceId ) workspace = appNow.activeWorkspace ?? appNow.workspaces[0]?.id ?? '';
+			if ( !appNow.workspaces.length ) firstWorkspaceName = messages['dialog.workspace.first'];
 		});
 		if ( !serviceId ) return;
 		window.shep.invoke('services:record', serviceId).then(record => {
@@ -58,7 +58,6 @@
 			address = service.url;
 			name = service.name;
 			workspace = service.workspace;
-			ownSession = hasOwnSession(service);
 			addressField?.select();
 		});
 	});
@@ -67,8 +66,8 @@
 		event.preventDefault();
 		touched = true;
 		if ( !isValid ) return;
-		if ( serviceId ) await window.shep.invoke('services:update', serviceId, address, name, workspace, ownSession);
-		else await window.shep.invoke('services:add', address, name, workspace, ownSession);
+		if ( serviceId ) await window.shep.invoke('services:update', serviceId, address, name, workspace);
+		else await window.shep.invoke('services:add', address, name, workspace, firstWorkspaceName);
 		onclose();
 	}
 </script>
@@ -113,15 +112,14 @@
 			<span>{messages['dialog.workspace']}</span>
 			<select bind:value={workspace} name="workspace">
 				{#each appNow.workspaces as option (option.id)}<option value={option.id}>{option.name}</option>{/each}
-				<option value="">{messages['dialog.workspace.every']}</option>
 			</select>
 		</label>
+	{:else if appNow}
+		<label>
+			<span>{messages['dialog.workspace']}</span>
+			<input bind:value={firstWorkspaceName} name="workspaceName" type="text" autocomplete="off" placeholder={messages['dialog.workspaceName.placeholder']} />
+		</label>
 	{/if}
-
-	<div class="own-session">
-		<span>{messages['dialog.ownSession']}</span>
-		<Switch label={messages['dialog.ownSession']} checked={ownSession} onchange={on => ownSession = on} />
-	</div>
 
 	<footer>
 		<button type="button" class="secondary" onclick={onclose}>{messages['dialog.cancel']}</button>
@@ -132,15 +130,6 @@
 <style>
 	.dialog.adding {
 		width: min(560px, calc(100vw - 32px));
-	}
-
-	.own-session {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 16px;
-		font-size: 13px;
-		font-weight: 600;
 	}
 
 	.catalogue {

@@ -22,9 +22,11 @@ import { PreferenceHost, applyThemeBeforeTheWindow } from './preferences.ts';
 import { APP_ACTIONS, type AppAction } from '../shared/channels.ts';
 import { WORKSPACE_ICONS } from '../shared/workspace.ts';
 import { NAVIGATIONS } from '../shared/service.ts';
+import { normalizeUrl } from '../shared/address.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '../shared/preferences.ts';
 import { leavesFullScreen, shortcutFor, type KeyInput, type ShortcutAction } from './shortcuts.ts';
 import { setWorkspaceImages } from './workspaceimages.ts';
+import { settleSavedServicesIntoWorkspaces } from './workspacesessions.ts';
 import type { AppState } from '../shared/channels.ts';
 
 // The default, not setUserAgent per page: Cloudflare Turnstile fails any overridden
@@ -70,10 +72,13 @@ if ( !app.requestSingleInstanceLock() ) {
 	handle('app:getVersion', () => version);
 	handle('services:list', () => services?.list() ?? []);
 	handle('services:activate', (event, id) => services?.activate(typeof id === 'string' ? id : null));
-	handle('services:add', (event, url, name, workspace, ownSession) =>
-		services?.add(text(url), text(name), typeof workspace === 'string' ? workspace : undefined, ownSession === true) ?? null);
-	handle('services:update', (event, id, url, name, workspace, ownSession) =>
-		services?.update(text(id), text(url), text(name), typeof workspace === 'string' ? workspace : undefined, typeof ownSession === 'boolean' ? ownSession : undefined) ?? false);
+	const isWorkspace = (id: unknown): id is string => store.get('workspaces').some(workspace => workspace.id === id);
+	handle('services:add', (event, url, name, workspace, firstWorkspaceName) => {
+		if ( !services || !workspaces || normalizeUrl(text(url)) === null ) return null;
+		return services.add(text(url), text(name), workspaces.homeForNewService(text(workspace), text(firstWorkspaceName)));
+	});
+	handle('services:update', (event, id, url, name, workspace) =>
+		services?.update(text(id), text(url), text(name), isWorkspace(workspace) ? workspace : undefined) ?? false);
 	handle('services:reorder', (event, ids) => services?.reorder(Array.isArray(ids) ? ids.map(text) : []));
 	handle('services:menu', (event, id) => services?.showMenu(text(id)));
 	handle('services:record', (event, id) => store.get('services').find(service => service.id === text(id)) ?? null);
@@ -88,7 +93,15 @@ if ( !app.requestSingleInstanceLock() ) {
 	handle('overlay:open', (event, dialog) => overlay?.open(dialog as OverlayDialog));
 	handle('overlay:close', () => overlay?.close());
 
-	handle('workspaces:menu', () => workspaces?.showMenu());
+	handle('workspaces:choose', (event, id) => workspaces?.choose(typeof id === 'string' ? id : null));
+	handle('workspaces:tabMenu', (event, id) => workspaces?.showTabMenu(typeof id === 'string' ? id : null));
+	handle('workspaces:hiddenMenu', (event, ids, x, y) =>
+		workspaces?.showHiddenMenu(Array.isArray(ids) ? ids.map(text) : [], typeof x === 'number' ? x : 0, typeof y === 'number' ? y : 0));
+	handle('workspaces:reorder', (event, ids) => workspaces?.reorder(Array.isArray(ids) ? ids.map(text) : []));
+	handle('services:moveToWorkspace', (event, id, workspace) => {
+		const serviceExists = store.get('services').some(service => service.id === text(id));
+		if ( isWorkspace(workspace) && serviceExists ) services?.moveToWorkspace(text(id), workspace);
+	});
 	handle('workspaces:save', (event, id, name) => workspaces?.save(typeof id === 'string' ? id : null, text(name)));
 	handle('workspaces:images', (event, images) => setWorkspaceImages(images, store.get('workspaces').map(workspace => workspace.id)));
 	handle('workspaces:get', (event, id) => store.get('workspaces').find(workspace => workspace.id === text(id)) ?? null);
@@ -101,7 +114,6 @@ if ( !app.requestSingleInstanceLock() ) {
 		dontDisturb: store.get('dontDisturb'),
 		workspaces: store.get('workspaces'),
 		activeWorkspace: store.get('activeWorkspace'),
-		unreadElsewhere: services?.unreadElsewhere() ?? false,
 		language: resolvedLanguage()
 	});
 	const announceState = () => {
@@ -282,6 +294,7 @@ if ( !app.requestSingleInstanceLock() ) {
 		updates = new Updates(window);
 		updates.check(false);
 		applySpelling(window.webContents.session);
+		settleSavedServicesIntoWorkspaces();
 		services = new ServiceHost(window, {
 			edit: id => overlay?.open({ dialog: 'edit', serviceId: id }),
 			shortcut: handleShortcut,

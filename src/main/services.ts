@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { app, dialog, Menu, session, WebContentsView, type BrowserWindow, type WebContents } from 'electron';
 import { RAIL_WIDTH, TITLE_BAR_HEIGHT } from '../shared/chrome.ts';
 import { nameFromUrl, normalizeUrl } from '../shared/address.ts';
-import { hasOwnSession, ownPartition, onlyServiceInSessionOrOnOrigin, SHARED_PARTITION, type Navigation, type ServiceRecord, type ServiceState, type UnreadCount } from '../shared/service.ts';
+import { onlyServiceInSessionOrOnOrigin, partitionOf, type Navigation, type ServiceRecord, type ServiceState, type UnreadCount } from '../shared/service.ts';
 import { preferences, store, updateService } from './store.ts';
 import { countFromTitle, createBlinkGuard, totalUnread } from './unread.ts';
 import { faviconFor, ICONS_BEYOND_FAVICONS } from './favicon.ts';
@@ -71,7 +71,7 @@ export class ServiceHost {
 			message: messages['removeAll.message'], detail: messages['removeAll.detail']
 		});
 		if ( response !== 0 ) return;
-		const partitions = new Set(store.get('services').map(service => service.partition));
+		const partitions = new Set(store.get('services').map(partitionOf));
 		for ( const id of [...this.running.keys()] ) this.stop(id);
 		store.set('services', []);
 		await Promise.all([...partitions].map(partition => this.clearSessionIfNoServiceUses(partition)));
@@ -121,13 +121,13 @@ export class ServiceHost {
 		if ( active ) this.running.get(active)?.view.webContents.focus();
 	}
 
-	add(address: string, name: string, workspace = store.get('activeWorkspace') ?? '', ownSession = false): string | null {
+	add(address: string, name: string, workspace: string): string | null {
 		const url = normalizeUrl(address);
 		if ( !url ) return null;
 		const services = store.get('services');
 		const id = String(services.reduce((highest, service) => Math.max(highest, Number(service.id) || 0), 0) + 1);
 		const record: ServiceRecord = {
-			id, url, name: name.trim() || nameFromUrl(url), partition: ownSession ? ownPartition(id) : SHARED_PARTITION, workspace,
+			id, url, name: name.trim() || nameFromUrl(url), workspace,
 			enabled: true, notifications: true, muted: false, media: false, trust: false, zoomLevel: 0, favicon: ''
 		};
 		store.set('services', [...services, record]);
@@ -136,14 +136,12 @@ export class ServiceHost {
 		return id;
 	}
 
-	update(id: string, address: string, name: string, workspace = this.record(id).workspace, ownSession = hasOwnSession(this.record(id))): boolean {
+	update(id: string, address: string, name: string, workspace = this.record(id).workspace): boolean {
 		const url = normalizeUrl(address);
 		if ( !url ) return false;
 		const before = this.record(id);
-		const partition = ownSession === hasOwnSession(before) ? before.partition : ownSession ? ownPartition(id) : SHARED_PARTITION;
-		updateService(id, { url, name: name.trim() || nameFromUrl(url), workspace, partition });
-		if ( partition !== before.partition ) this.restartInSession(id, before.partition);
-		else if ( before.url !== url ) this.running.get(id)?.view.webContents.loadURL(url);
+		updateService(id, { url, name: name.trim() || nameFromUrl(url), workspace });
+		if ( !this.restartIfItsSessionChanged(before) && before.url !== url ) this.running.get(id)?.view.webContents.loadURL(url);
 		this.showWorkspace(store.get('activeWorkspace'));
 		return true;
 	}
@@ -248,25 +246,23 @@ export class ServiceHost {
 		store.set('activeWorkspace', workspace);
 		const shown = this.shownIds();
 		const active = store.get('activeServiceId');
-		if ( active && !shown.includes(active) ) this.activate(shown.find(id => this.running.has(id)) ?? null);
+		if ( active && !shown.includes(active) ) this.activate(this.firstShownRunning());
 		else this.announce();
 	}
 
+	private firstShownRunning(): string | null {
+		return this.shownIds().find(id => this.running.has(id)) ?? null;
+	}
+
 	moveToWorkspace(id: string, workspace: string): void {
+		const before = this.record(id);
 		updateService(id, { workspace });
+		this.restartIfItsSessionChanged(before);
 		this.showWorkspace(store.get('activeWorkspace'));
 	}
 
 	somethingUnread(): boolean {
 		return [...this.running.values()].some(service => service.unread === '•' || service.unread > 0);
-	}
-
-	unreadElsewhere(): boolean {
-		const active = store.get('activeWorkspace');
-		return active !== null && store.get('services').some(record => {
-			const unread = this.running.get(record.id)?.unread ?? 0;
-			return !isShownIn(record.workspace, active) && (unread === '•' || unread > 0);
-		});
 	}
 
 	activateNth(index: number): void {
@@ -312,35 +308,43 @@ export class ServiceHost {
 
 	private async confirmRemove(id: string): Promise<void> {
 		const messages = mainMessages();
-		const { name, partition } = this.record(id);
-		const sessionShared = store.get('services').some(service => service.id !== id && service.partition === partition);
+		const record = this.record(id);
+		const partition = partitionOf(record);
+		const sessionShared = store.get('services').some(service => service.id !== id && partitionOf(service) === partition);
 		const { response } = await dialog.showMessageBox(this.window, {
 			type: 'question',
 			buttons: [messages['remove.confirm'], messages['dialog.cancel']],
 			defaultId: 1,
 			cancelId: 1,
-			message: fill(messages['remove.message'], { name }),
+			message: fill(messages['remove.message'], { name: record.name }),
 			detail: messages[sessionShared ? 'remove.detail.shared' : 'remove.detail']
 		});
-		if ( response !== 0 ) return;
+		if ( response === 0 ) await this.remove(id);
+	}
+
+	async remove(id: string): Promise<void> {
+		const partition = partitionOf(this.record(id));
 		this.stop(id);
 		store.set('services', store.get('services').filter(service => service.id !== id));
 		await this.clearSessionIfNoServiceUses(partition);
-		if ( store.get('activeServiceId') === id ) this.activate(store.get('services').find(service => service.enabled)?.id ?? null);
+		if ( store.get('activeServiceId') === id ) this.activate(this.firstShownRunning());
 		else this.announce();
 	}
 
-	private restartInSession(id: string, partitionLeft: string): void {
-		if ( this.running.has(id) ) {
-			this.stop(id);
-			this.run(this.record(id));
+	private restartIfItsSessionChanged(before: ServiceRecord): boolean {
+		const partitionLeft = partitionOf(before);
+		if ( partitionOf(this.record(before.id)) === partitionLeft ) return false;
+		if ( this.running.has(before.id) ) {
+			this.stop(before.id);
+			this.run(this.record(before.id));
 			this.activate(store.get('activeServiceId'));
 		}
 		this.clearSessionIfNoServiceUses(partitionLeft);
+		return true;
 	}
 
 	private async clearSessionIfNoServiceUses(partition: string): Promise<void> {
-		if ( store.get('services').some(service => service.partition === partition) ) return;
+		if ( store.get('services').some(service => partitionOf(service) === partition) ) return;
 		await session.fromPartition(partition).clearStorageData().catch(() => {});
 	}
 
@@ -400,7 +404,7 @@ export class ServiceHost {
 		if ( this.running.has(record.id) ) return;
 		const view = new WebContentsView({
 			webPreferences: {
-				partition: record.partition, preload: join(__dirname, '../preload/service.js'),
+				partition: partitionOf(record), preload: join(__dirname, '../preload/service.js'),
 				sandbox: true, contextIsolation: true, nodeIntegration: false, spellcheck: preferences().spellcheck
 			}
 		});
@@ -416,9 +420,10 @@ export class ServiceHost {
 		});
 		this.running.set(record.id, { view, unread: 0, pageTitle: '', pageFullScreen: false, disposeBlinkGuard: blinkGuard.dispose });
 
-		if ( !this.startedPartitions.has(record.partition) ) {
-			this.startedPartitions.add(record.partition);
-			applyPermissionPolicy(contents.session, this.window, (asking, origin) => this.serviceAsking(record.partition, asking, origin));
+		const partition = partitionOf(record);
+		if ( !this.startedPartitions.has(partition) ) {
+			this.startedPartitions.add(partition);
+			applyPermissionPolicy(contents.session, this.window, (asking, origin) => this.serviceAsking(partition, asking, origin));
 			this.events.sessionStarted(contents.session);
 		}
 		// typed into Preferences, and so an override, which Cloudflare's Turnstile refuses

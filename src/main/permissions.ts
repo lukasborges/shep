@@ -1,6 +1,6 @@
 import { dialog, type BrowserWindow, type Session, type WebContents } from 'electron';
-import { store } from './store.ts';
-import { hasOwnSession, ownPartition, type ServiceRecord } from '../shared/service.ts';
+import { store, type RememberedPermissionKey } from './store.ts';
+import type { ServiceRecord } from '../shared/service.ts';
 import { mainMessages } from './messages.ts';
 import { fill, type MessageKey } from '../shared/i18n/index.ts';
 
@@ -12,9 +12,7 @@ const ASKED_PERMISSIONS: Record<string, MessageKey> = {
 // Granted with the camera, or the display sleeps in the middle of a call.
 const CALL_PERMISSIONS = ['screen-wake-lock'];
 
-const ownSessionNameEvenWhenShared = (service: ServiceRecord) => hasOwnSession(service) ? service.partition : ownPartition(service.id);
-
-const rememberedKey = (service: ServiceRecord, permission: string) => ownSessionNameEvenWhenShared(service) + '|' + permission;
+const rememberedKey = (service: ServiceRecord, permission: string): RememberedPermissionKey => `persist:service-${service.id}|${permission}`;
 
 function remembered(service: ServiceRecord, permission: string): boolean | undefined {
 	return store.get('permissions')[rememberedKey(service, permission)];

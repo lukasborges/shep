@@ -8,9 +8,9 @@ export type UnreadCount = number | '•';
 
 export const SHARED_PARTITION = 'persist:shared';
 
-export const ownPartition = (id: string) => `persist:service-${id}`;
+export const workspacePartition = (workspace: string) => workspace ? `persist:workspace-${workspace}` : SHARED_PARTITION;
 
-export const hasOwnSession = (record: Pick<ServiceRecord, 'partition'>) => record.partition !== SHARED_PARTITION;
+export const partitionOf = (service: Pick<ServiceRecord, 'workspace'>) => workspacePartition(service.workspace);
 
 const originOf = (address: string) => {
 	try {
@@ -26,7 +26,7 @@ export function pageTitleBesideName(name: string, pageTitle: string): string {
 }
 
 export function onlyServiceInSessionOrOnOrigin(services: ServiceRecord[], partition: string, origin: string): ServiceRecord | undefined {
-	const inSession = services.filter(service => service.partition === partition);
+	const inSession = services.filter(service => partitionOf(service) === partition);
 	if ( inSession.length === 1 ) return inSession[0];
 	const asking = originOf(origin);
 	const onOrigin = inSession.filter(service => asking !== null && originOf(service.url) === asking);
@@ -37,7 +37,6 @@ export interface ServiceRecord {
 	id: string;
 	name: string;
 	url: string;
-	partition: string;
 	workspace: string;
 	enabled: boolean;
 	notifications: boolean;
@@ -62,4 +61,23 @@ export interface ServiceState {
 	loading: boolean;
 	workspace: string;
 	shown: boolean;
+}
+
+export type ServiceSavedWithASessionOfItsChoosing = ServiceRecord & { partition?: string };
+
+export interface SignInCarryOver {
+	copies: { from: string; to: string }[];
+	unused: string[];
+}
+
+export function signInsToCarryOver(services: readonly ServiceSavedWithASessionOfItsChoosing[]): SignInCarryOver {
+	const chosen = (service: ServiceSavedWithASessionOfItsChoosing) => service.partition ?? SHARED_PARTITION;
+	const workspaces = [...new Set(services.map(service => service.workspace).filter(Boolean))];
+	const copies = workspaces.map(workspace => {
+		const used = new Set(services.filter(service => service.workspace === workspace).map(chosen));
+		const [only] = used;
+		return { from: used.size === 1 && only ? only : SHARED_PARTITION, to: workspacePartition(workspace) };
+	}).filter(({ from, to }) => from !== to);
+	const unused = [...new Set(services.map(chosen))].filter(partition => !services.some(service => partitionOf(service) === partition));
+	return { copies, unused };
 }

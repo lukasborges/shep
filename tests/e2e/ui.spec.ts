@@ -1,6 +1,6 @@
 import type { Server } from 'node:http';
 import { test, expect } from '@playwright/test';
-import type { ServiceRecord, ServiceState } from '../../src/shared/service.ts';
+import type { ServiceState } from '../../src/shared/service.ts';
 import { TITLE_BAR_HEIGHT } from '../../src/shared/chrome.ts';
 import { launchShep, closeShep, inService, inViewOverServices, viewOverServicesShown, serviceRecord, type Shep } from './helpers/launch.ts';
 import { serveFixtures } from './helpers/server.ts';
@@ -57,34 +57,42 @@ test('draws the unread count as a badge on the icon, capped at 99+, and a dot fo
 	await expect(badge('First')).toHaveCount(0, { timeout: 5000 });
 });
 
-test('shows the active service\'s name and page title in the title bar, and its history in the buttons', async () => {
-	await expect(shep.window.locator('.titlebar .identity b')).toHaveText('First');
+test('puts the active page\'s title and its service\'s name in the window\'s title, and its history in the buttons', async () => {
+	await expect(shep.window).toHaveTitle('Fixture service - First');
 	await expect(shep.window.locator('.titlebar button[aria-label="Back"]')).toBeDisabled();
 	await inService(shep, at('127.0.0.1', '/service.html'), `location.href = ${JSON.stringify(at('127.0.0.1', '/away.html?from=title-bar'))}`, { userGesture: true });
-	await expect(shep.window.locator('.titlebar .identity .detail')).toHaveText('Somewhere else');
+	await expect(shep.window).toHaveTitle('Somewhere else - First');
 	await expect(shep.window.locator('.titlebar button[aria-label="Back"]')).toBeEnabled();
 	await shep.window.locator('.titlebar button[aria-label="Back"]').click();
-	await expect(shep.window.locator('.titlebar .identity .detail')).toHaveText('Fixture service');
+	await expect(shep.window).toHaveTitle('Fixture service - First');
 });
 
-test('shows a title the page changes on its own, with no navigation and no change to its unread count', async () => {
+test('follows a title the page changes on its own, with no navigation and no change to its unread count', async () => {
 	await inService(shep, at('127.0.0.1', '/service.html'), 'document.title = "Renamed by the page"');
-	await expect(shep.window.locator('.titlebar .identity .detail')).toHaveText('Renamed by the page');
+	await expect(shep.window).toHaveTitle('Renamed by the page - First');
 	await inService(shep, at('127.0.0.1', '/service.html'), 'document.title = "Fixture service"');
-	await expect(shep.window.locator('.titlebar .identity .detail')).toHaveText('Fixture service');
+	await expect(shep.window).toHaveTitle('Fixture service - First');
+});
+
+test('shows where a link under the pointer leads in the title bar, and nothing once it leaves', async () => {
+	const pointAt = (url: string) => shep.app.evaluate(({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0]?.webContents.send('services:hover', '1', url), url);
+	await pointAt('https://example.com/somewhere');
+	await expect(shep.window.locator('.titlebar .link-under-pointer')).toHaveText('https://example.com/somewhere');
+	await pointAt('');
+	await expect(shep.window.locator('.titlebar .link-under-pointer')).toHaveText('');
 });
 
 test('goes home to the address the service was added with', async () => {
 	await inService(shep, at('127.0.0.1', '/service.html'), `location.href = ${JSON.stringify(at('127.0.0.1', '/away.html?from=home'))}`);
-	await expect(shep.window.locator('.titlebar .identity .detail')).toHaveText('Somewhere else');
+	await expect(shep.window).toHaveTitle('Somewhere else - First');
 	await shep.window.locator('.titlebar button[aria-label="Home"]').click();
-	await expect(shep.window.locator('.titlebar .identity .detail')).toHaveText('Fixture service');
+	await expect(shep.window).toHaveTitle('Fixture service - First');
 	expect((await byId('1'))?.pageTitle).toBe('Fixture service');
 });
 
 test('finds text in the active page and counts the matches, and Escape closes the find bar', async () => {
 	await shep.window.locator('.rail .service[aria-label="Second"]').click();
-	await expect(shep.window.locator('.titlebar .identity b')).toHaveText('Second');
+	await expect(shep.window).toHaveTitle('Long page - Second');
 	await openFindBar();
 	await findInPage('sheepdog');
 	await expect.poll(findBarText('.matches')).toBe('1/3');
@@ -129,43 +137,6 @@ test('marks the find bar and turns the arrows off when nothing matches or nothin
 	await expect.poll(() => inFindBar<boolean>('document.querySelector(".panel").classList.contains("nothing-found")')).toBe(false);
 	await expect.poll(findBarButtonDisabled('Next match')).toBe(false);
 	await pressEscapeInFindBar();
-});
-
-test('centres the title on the window, not on the space the buttons leave', async () => {
-	const title = (await shep.window.locator('.titlebar .identity').boundingBox())!;
-	const windowWidth = await shep.window.evaluate(() => window.innerWidth);
-	expect(Math.abs(title.x + title.width / 2 - windowWidth / 2)).toBeLessThanOrEqual(1);
-});
-
-test('covers a long title with the title bar buttons in the narrowest window, so none of the title shows through', async () => {
-	const sizeBefore = await shep.app.evaluate(({ BrowserWindow }) => {
-		const window = BrowserWindow.getAllWindows()[0]!;
-		const [width, height] = window.getSize();
-		const [narrowestWidth] = window.getMinimumSize();
-		window.setSize(narrowestWidth!, height!);
-		return { width: width!, height: height! };
-	});
-	await shep.window.locator('.rail .service[aria-label="Second"]').click();
-	await inService(shep, at('127.0.0.1', '/long.html'), 'document.title = "(120) A page title long enough to run under the buttons at the end of the title bar"');
-	const button = (await shep.window.locator('.titlebar button[aria-label="Find in page"]').boundingBox())!;
-	const titleEnd = async () => {
-		const title = (await shep.window.locator('.titlebar .identity').boundingBox())!;
-		return title.x + title.width;
-	};
-	await expect.poll(titleEnd).toBeGreaterThan(button.x);
-	const buttonIsOnTopOfTitle = await shep.window.evaluate(({ x, y }) => {
-		const identity = document.querySelector<HTMLElement>('.titlebar .identity')!;
-		identity.style.pointerEvents = 'auto';
-		const topmost = document.elementFromPoint(x, y);
-		identity.style.pointerEvents = '';
-		return topmost?.closest('button[aria-label="Find in page"]') !== null;
-	}, { x: button.x + 4, y: button.y + button.height / 2 });
-	expect(buttonIsOnTopOfTitle).toBe(true);
-	const opaqueColour = /^rgb\(/;
-	const buttonsBackdrop = await shep.window.locator('.titlebar .group.end').evaluate(group => getComputedStyle(group).backgroundColor);
-	expect(buttonsBackdrop).toMatch(opaqueColour);
-	await inService(shep, at('127.0.0.1', '/long.html'), 'document.title = "(120) Long page"');
-	await shep.app.evaluate(({ BrowserWindow }, { width, height }) => BrowserWindow.getAllWindows()[0]!.setSize(width, height), sizeBefore);
 });
 
 test('adds a service from the address typed behind the +, naming it after the site', async () => {
@@ -247,24 +218,4 @@ test('shows the app\'s state changes without an exception on the bridge', async 
 	await expect(shep.window.locator('.tool.on')).toHaveCount(0);
 	expect(thrown).toEqual([]);
 	await session.detach();
-});
-
-test('signs a service in apart from the others when its switch is turned on, which editing it shows', async () => {
-	const signInApartSwitch = `document.querySelector('[role=switch][aria-label="Sign in apart from the other services"]')`;
-	const signInApartChecked = () => inOverlay<string>(`${signInApartSwitch}.getAttribute("aria-checked")`);
-	await shep.window.locator('.rail .add').click();
-	await expect.poll(overlayShown).toBe(true);
-	expect(await signInApartChecked()).toBe('false');
-	await typeInto('input[name="address"]', at('localhost', '/long.html'));
-	await inOverlay(`${signInApartSwitch}.click()`);
-	await inOverlay('document.querySelector("form").requestSubmit()');
-	await expect.poll(overlayShown).toBe(false);
-	const { id = '' } = (await list()).at(-1) ?? {};
-	const record = await shep.window.evaluate(id => window.shep.invoke('services:record', id), id) as ServiceRecord;
-	expect(record.partition).toBe('persist:service-' + id);
-
-	await shep.window.evaluate(id => window.shep.invoke('overlay:open', { dialog: 'edit', serviceId: id }), id);
-	await expect.poll(signInApartChecked).toBe('true');
-	await inOverlay('document.querySelector("footer .secondary").click()');
-	await expect.poll(overlayShown).toBe(false);
 });

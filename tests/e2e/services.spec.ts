@@ -32,11 +32,11 @@ test.afterAll(async () => {
 	server.close();
 });
 
-test('runs each service in the session its record names, so a saved sign-in survives', async () => {
+test('runs a service in its workspace\'s session, kept on disk, so a saved sign-in survives', async () => {
 	const storage = await shep.app.evaluate(({ webContents }, url) =>
 		webContents.getAllWebContents().find(contents => contents.getURL() === url)?.session.storagePath, serviceUrl());
 	// the separator is whichever the system writes its paths with
-	expect(storage).toMatch(/[/\\]Partitions[/\\]service-1$/);
+	expect(storage).toMatch(/[/\\]Partitions[/\\]workspace-w[0-9a-z]+$/);
 });
 
 test('runs the service page isolated, sandboxed and without node', async () => {
@@ -208,7 +208,10 @@ test('opens a link to another service\'s site in that service, showing its works
 	try {
 		other = await launchShep({
 			store: {
-				services: [serviceRecord('1', at('127.0.0.1', '/service.html')), serviceRecord('2', at('localhost', '/away.html'), { workspace: 'elsewhere' })],
+				services: [
+					serviceRecord('1', at('127.0.0.1', '/service.html'), { workspace: 'here' }),
+					serviceRecord('2', at('localhost', '/away.html'), { workspace: 'elsewhere' })
+				],
 				workspaces: [{ id: 'here', name: 'Here', hue: 'green', icon: null }, { id: 'elsewhere', name: 'Elsewhere', hue: 'blue', icon: null }],
 				activeWorkspace: 'here',
 				activeServiceId: '1'

@@ -1,22 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hasOwnSession, ownPartition, onlyServiceInSessionOrOnOrigin, pageTitleBesideName, SHARED_PARTITION, type ServiceRecord } from '../../src/shared/service.ts';
+import { onlyServiceInSessionOrOnOrigin, pageTitleBesideName, partitionOf, signInsToCarryOver, SHARED_PARTITION, workspacePartition, type ServiceRecord, type ServiceSavedWithASessionOfItsChoosing } from '../../src/shared/service.ts';
 
-const service = (id: string, url: string, partition: string) => ({ id, url, partition }) as ServiceRecord;
+const service = (id: string, url: string, workspace = '') => ({ id, url, workspace }) as ServiceRecord;
+const saved = (id: string, workspace: string, partition?: string) => ({ ...service(id, 'https://example.com/', workspace), partition }) as ServiceSavedWithASessionOfItsChoosing;
 
-const gmail = service('1', 'https://mail.google.com/mail/', SHARED_PARTITION);
-const chat = service('2', 'https://chat.google.com/', SHARED_PARTITION);
-const secondGmail = service('3', 'https://mail.google.com/mail/u/1/', ownPartition('3'));
-const imported = service('4', 'https://web.whatsapp.com/', 'persist:whatsapp_4');
+const gmail = service('1', 'https://mail.google.com/mail/');
+const chat = service('2', 'https://chat.google.com/');
+const secondGmail = service('3', 'https://mail.google.com/mail/u/1/', 'w1');
 
-test('keeps a service in the shared session unless it has one of its own, as a second account does, or one the Ext app named persist:<type>_<id>', () => {
-	assert.equal(hasOwnSession(gmail), false);
-	assert.equal(hasOwnSession(secondGmail), true);
-	assert.equal(hasOwnSession(imported), true);
+test('signs the services of a workspace in together, apart from every other workspace, and the ones in no workspace into the shared session', () => {
+	assert.equal(partitionOf(gmail), SHARED_PARTITION);
+	assert.equal(partitionOf(chat), SHARED_PARTITION);
+	assert.equal(partitionOf(secondGmail), 'persist:workspace-w1');
+	assert.notEqual(workspacePartition('w1'), workspacePartition('w2'));
 });
 
 test('takes a request with no page, a service worker\'s, to the one service in its session, from whatever origin', () => {
-	assert.equal(onlyServiceInSessionOrOnOrigin([gmail, secondGmail], ownPartition('3'), 'https://accounts.google.com'), secondGmail);
+	assert.equal(onlyServiceInSessionOrOnOrigin([gmail, secondGmail], workspacePartition('w1'), 'https://accounts.google.com'), secondGmail);
 });
 
 test('tells the services of the shared session apart by the origin a request with no page comes from', () => {
@@ -25,11 +26,31 @@ test('tells the services of the shared session apart by the origin a request wit
 });
 
 test('takes a request to no service when the origin does not tell the services apart', () => {
-	const otherGmail = service('5', 'https://mail.google.com/mail/u/2/', SHARED_PARTITION);
+	const otherGmail = service('5', 'https://mail.google.com/mail/u/2/');
 	assert.equal(onlyServiceInSessionOrOnOrigin([gmail, otherGmail], SHARED_PARTITION, 'https://mail.google.com'), undefined);
 	assert.equal(onlyServiceInSessionOrOnOrigin([gmail, chat], SHARED_PARTITION, 'https://drive.google.com'), undefined);
 	assert.equal(onlyServiceInSessionOrOnOrigin([gmail, chat], SHARED_PARTITION, ''), undefined);
-	assert.equal(onlyServiceInSessionOrOnOrigin([gmail], ownPartition('1'), 'https://mail.google.com'), undefined);
+	assert.equal(onlyServiceInSessionOrOnOrigin([gmail], workspacePartition('w1'), 'https://mail.google.com'), undefined);
+});
+
+test('starts each workspace\'s session from the one its services shared before, the shared one when they used several, and leaves one already its own', () => {
+	const { copies } = signInsToCarryOver([
+		saved('1', 'w1', SHARED_PARTITION), saved('2', 'w1', SHARED_PARTITION),
+		saved('3', 'w2', 'persist:service-3'),
+		saved('4', 'w3', SHARED_PARTITION), saved('5', 'w3', 'persist:service-5'),
+		saved('6', 'w4', 'persist:workspace-w4')
+	]);
+	assert.deepEqual(copies, [
+		{ from: SHARED_PARTITION, to: 'persist:workspace-w1' },
+		{ from: 'persist:service-3', to: 'persist:workspace-w2' },
+		{ from: SHARED_PARTITION, to: 'persist:workspace-w3' }
+	]);
+});
+
+test('lets go of every session a service signed in to before, once its workspace has a copy', () => {
+	assert.deepEqual(signInsToCarryOver([saved('1', 'w1', SHARED_PARTITION), saved('2', 'w2', 'persist:service-2')]).unused, [SHARED_PARTITION, 'persist:service-2']);
+	assert.deepEqual(signInsToCarryOver([saved('1', 'w1', SHARED_PARTITION), saved('2', 'w1', 'persist:whatsapp_2')]).unused, [SHARED_PARTITION, 'persist:whatsapp_2']);
+	assert.deepEqual(signInsToCarryOver([saved('1', 'w1', 'persist:workspace-w1')]).unused, []);
 });
 
 test('shows the page title beside the name only when the name does not already say it, whatever the case or accents', () => {

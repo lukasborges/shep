@@ -1,28 +1,40 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { workspaceMenu, type WorkspaceMenuActions } from '../../src/main/workspacemenu.ts';
+import { hiddenWorkspacesMenu, workspaceTabMenu, type WorkspaceMenuItem, type WorkspaceTabActions } from '../../src/main/workspacemenu.ts';
 import { en } from '../../src/shared/i18n/en.ts';
 
 const noop = () => {};
-const actions: WorkspaceMenuActions = { choose: noop, create: noop, rename: noop, changeIcon: noop, remove: noop };
-const workspaces = [{ id: 'w1', name: 'Work', hue: 'blue' as const }, { id: 'w2', name: 'Personal', hue: 'green' as const }];
-const describe = (active: string | null) => workspaceMenu(workspaces, active, actions, en)
-	.map(item => item.type === 'separator' ? '---' : `${item.label}${item.checked ? ' ✓' : ''}${item.accelerator ? ' ' + item.accelerator : ''}`);
+const actions: WorkspaceTabActions = { create: noop, rename: noop, changeIcon: noop, remove: noop };
+const workspaces = [{ id: 'w1', name: 'Work', hue: 'blue' as const }, { id: 'w2', name: 'Personal', hue: 'green' as const }, { id: 'w3', name: 'Family', hue: 'red' as const }];
+const describe = (items: WorkspaceMenuItem[]) => items.map(item => item.type === 'separator' ? '---' : `${item.label}${item.accelerator ? ' ' + item.accelerator : ''}`);
 
-test('lists the workspaces with their shortcuts, then All Services, then what can be done to them', () => {
-	assert.deepEqual(describe('w2'), ['Work CommandOrControl+Alt+1', 'Personal ✓ CommandOrControl+Alt+2', 'All Services CommandOrControl+Alt+3', '---', 'New Workspace…', 'Rename…', 'Change Icon…', 'Delete']);
+test('offers on a workspace\'s tab what can be done to it, keeping Delete apart at the end', () => {
+	assert.deepEqual(describe(workspaceTabMenu('w2', actions, en)), ['Rename…', 'Change Icon…', '---', 'New Workspace…', '---', 'Delete']);
 });
 
-test('offers nothing to rename or delete under All Services, which is not a workspace', () => {
-	assert.deepEqual(describe(null), ['Work CommandOrControl+Alt+1', 'Personal CommandOrControl+Alt+2', 'All Services ✓ CommandOrControl+Alt+3', '---', 'New Workspace…']);
+test('offers only a new workspace on the All Services tab, which is not a workspace', () => {
+	assert.deepEqual(describe(workspaceTabMenu(null, actions, en)), ['New Workspace…']);
 });
 
-test('puts each workspace\'s image beside its name, and the grid beside All Services', () => {
-	const images = workspaceMenu(workspaces, 'w1', actions, en, id => `image of ${id ?? 'all'}`).map(item => item.icon);
-	assert.deepEqual(images.slice(0, 3), ['image of w1', 'image of w2', 'image of all']);
-	assert.equal(images.slice(3).some(Boolean), false);
+test('acts on the workspace whose tab was clicked', () => {
+	const renamed: string[] = [];
+	const removed: string[] = [];
+	const items = workspaceTabMenu('w2', { ...actions, rename: id => renamed.push(id), remove: id => removed.push(id) }, en);
+	items.find(item => item.label === 'Rename…')?.click?.();
+	items.find(item => item.label === 'Delete')?.click?.();
+	assert.deepEqual([renamed, removed], [['w2'], ['w2']]);
 });
 
-test('leaves a workspace without an image until the interface has drawn one', () => {
-	assert.equal(workspaceMenu(workspaces, 'w1', actions, en).some(item => item.icon), false);
+test('lists the workspaces whose tabs did not fit, in order, each with its own shortcut and what it has unread', () => {
+	const unread = { w1: 0, w2: '•', w3: 12 } as const;
+	const items = hiddenWorkspacesMenu(workspaces, ['w3', 'w2'], id => unread[id as keyof typeof unread], noop);
+	assert.deepEqual(describe(items), ['Personal (•) CommandOrControl+Alt+2', 'Family (12) CommandOrControl+Alt+3']);
+});
+
+test('puts the workspace on screen when its item is picked, with its image beside its name', () => {
+	const chosen: string[] = [];
+	const items = hiddenWorkspacesMenu(workspaces, ['w2'], () => 0, id => chosen.push(id), id => `image of ${id}`);
+	assert.equal(items[0]?.icon, 'image of w2');
+	items[0]?.click?.();
+	assert.deepEqual(chosen, ['w2']);
 });

@@ -24,12 +24,16 @@ export function hueOf(icon: WorkspaceIcon): WorkspaceHue {
 	return WORKSPACE_HUES[WORKSPACE_ICONS.indexOf(icon) % WORKSPACE_HUES.length] ?? 'blue';
 }
 
+export function newWorkspace(name: string): Workspace {
+	const icon = WORKSPACE_ICONS[Math.floor(Math.random() * WORKSPACE_ICONS.length)] ?? 'briefcase';
+	return { id: 'w' + Date.now().toString(36), name, icon, hue: hueOf(icon) };
+}
+
 // null is All Services: no filter, not a workspace.
 export type ActiveWorkspace = string | null;
 
-// A service in no workspace ('') belongs to every one.
 export function isShownIn(serviceWorkspace: string, active: ActiveWorkspace): boolean {
-	return active === null || serviceWorkspace === '' || serviceWorkspace === active;
+	return active === null || serviceWorkspace === active;
 }
 
 // Ctrl+Alt, or Command+Option on a Mac, and a number: the workspaces in order, then All Services right after the last.
@@ -39,6 +43,14 @@ export function workspaceForNumber(index: number, workspaces: readonly Workspace
 	return undefined;
 }
 
-export function hasUnreadElsewhere(services: readonly { workspace: string; unread: UnreadCount }[], active: ActiveWorkspace): boolean {
-	return active !== null && services.some(service => !isShownIn(service.workspace, active) && (service.unread === '•' || service.unread > 0));
+export function reorderWorkspaces(workspaces: readonly Workspace[], ids: readonly string[]): Workspace[] {
+	const byId = new Map(workspaces.map(workspace => [workspace.id, workspace]));
+	const ordered = [...new Set(ids)].flatMap(id => byId.get(id) ?? []);
+	return [...ordered, ...workspaces.filter(workspace => !ids.includes(workspace.id))];
+}
+
+export function unreadIn(services: readonly { workspace: string; unread: UnreadCount }[], workspace: string): UnreadCount {
+	const own = services.filter(service => service.workspace === workspace);
+	const count = own.reduce((sum, service) => sum + (service.unread === '•' ? 0 : service.unread), 0);
+	return count > 0 || !own.some(service => service.unread === '•') ? count : '•';
 }

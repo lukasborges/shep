@@ -3,8 +3,8 @@
 	import type { ServiceState } from '../shared/service.ts';
 	import { services, appState, activate, lockApp, openAddDialog, openPreferences, reorder, setDontDisturb, showServiceMenu } from './services.svelte.ts';
 	import { initials } from './initials.ts';
+	import { SERVICE_DRAG_TYPE } from './dragging.ts';
 	import Icon from './Icon.svelte';
-	import WorkspaceSwitcher from './WorkspaceSwitcher.svelte';
 
 	const { messages }: { messages: Messages } = $props();
 
@@ -40,13 +40,12 @@
 </script>
 
 <nav class="rail" aria-label="Services">
-	<WorkspaceSwitcher {messages} />
 	{#each shown as service (service.id)}
 		<button class="service" class:active={service.active} class:disabled={!service.enabled} class:dragged={dragged === service.id}
 			type="button" draggable="true" title={service.name} aria-label={service.name} aria-current={service.active ? 'page' : undefined}
 			onclick={() => activate(service.id)}
 			oncontextmenu={event => { event.preventDefault(); showServiceMenu(service.id); }}
-			ondragstart={() => { dragged = service.id; }}
+			ondragstart={event => { dragged = service.id; event.dataTransfer?.setData(SERVICE_DRAG_TYPE, service.id); }}
 			ondragover={event => dragOver(event, service.id)}
 			ondrop={drop}
 			ondragend={drop}>
@@ -62,8 +61,8 @@
 			</span>
 		</button>
 	{/each}
-	<button class="add" type="button" title={messages['rail.add']} aria-label={messages['rail.add']} onclick={openAddDialog}>
-		<Icon name="add" />
+	<button class="add" class:no-service-yet={!services.list.length} type="button" title={messages['rail.add']} aria-label={messages['rail.add']} onclick={openAddDialog}>
+		<span class="add-icon"><Icon name="add" /></span>
 	</button>
 
 	<div class="foot">
@@ -86,7 +85,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
-		padding: 10px 0;
+		padding: var(--rx-rail-gutter) 0;
 		background-color: var(--rx-chrome);
 		overflow-y: auto;
 		scrollbar-width: none;
@@ -95,7 +94,7 @@
 	.service, .add {
 		display: grid;
 		place-items: center;
-		flex: 0 0 52px;
+		flex: 0 0 var(--rx-rail-button);
 		border: 0;
 		background: none;
 		color: var(--rx-on-chrome);
@@ -104,6 +103,45 @@
 
 	.service:hover, .add:hover {
 		background-color: var(--rx-hover-on-chrome);
+	}
+
+	.add-icon {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 11px;
+	}
+
+	.add.no-service-yet:hover {
+		background: none;
+	}
+
+	.add.no-service-yet .add-icon {
+		background-color: var(--rx-on-chrome);
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+		color: var(--rx-chrome);
+	}
+
+	.add.no-service-yet .add-icon::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		animation: call 1.8s ease-out infinite;
+	}
+
+	@keyframes call {
+		from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rx-on-chrome) 55%, transparent); }
+		to { box-shadow: 0 0 0 10px transparent; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.add.no-service-yet .add-icon::after {
+			animation: none;
+			box-shadow: 0 0 0 4px color-mix(in srgb, var(--rx-on-chrome) 30%, transparent);
+		}
 	}
 
 	.service.active {

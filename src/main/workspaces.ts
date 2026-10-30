@@ -1,7 +1,7 @@
 import { dialog, Menu, type BrowserWindow } from 'electron';
-import { WORKSPACE_ICONS, hueOf, workspaceForNumber, type ActiveWorkspace, type Workspace, type WorkspaceIcon } from '../shared/workspace.ts';
+import { hueOf, newWorkspace, reorderWorkspaces, unreadIn, workspaceForNumber, type ActiveWorkspace, type Workspace, type WorkspaceIcon } from '../shared/workspace.ts';
 import { store } from './store.ts';
-import { workspaceMenu } from './workspacemenu.ts';
+import { hiddenWorkspacesMenu, workspaceTabMenu } from './workspacemenu.ts';
 import { workspaceImage } from './workspaceimages.ts';
 import type { ServiceHost } from './services.ts';
 import { mainMessages } from './messages.ts';
@@ -20,7 +20,7 @@ export class Workspaces {
 	}
 
 	choose(workspace: ActiveWorkspace): void {
-		this.services.showWorkspace(workspace);
+		if ( workspace === null || this.list().some(candidate => candidate.id === workspace) ) this.services.showWorkspace(workspace);
 	}
 
 	chooseNumber(index: number): void {
@@ -28,19 +28,35 @@ export class Workspaces {
 		if ( workspace !== undefined ) this.choose(workspace);
 	}
 
-	// A new workspace takes an icon at random, and becomes the one on screen.
 	save(id: string | null, name: string): void {
 		const trimmed = name.trim();
 		if ( !trimmed ) return;
-		if ( id ) {
-			store.set('workspaces', this.list().map(workspace => workspace.id === id ? { ...workspace, name: trimmed } : workspace));
-			this.services.showWorkspace(store.get('activeWorkspace'));
+		if ( !id ) {
+			this.createAndShow(trimmed);
 			return;
 		}
-		const icon = WORKSPACE_ICONS[Math.floor(Math.random() * WORKSPACE_ICONS.length)] ?? 'briefcase';
-		const created: Workspace = { id: 'w' + Date.now().toString(36), name: trimmed, icon, hue: hueOf(icon) };
+		store.set('workspaces', this.list().map(workspace => workspace.id === id ? { ...workspace, name: trimmed } : workspace));
+		this.services.showWorkspace(store.get('activeWorkspace'));
+	}
+
+	homeForNewService(wanted: string, firstWorkspaceName: string): string {
+		const list = this.list();
+		if ( list.some(workspace => workspace.id === wanted) ) return wanted;
+		const [first] = list;
+		if ( first ) return store.get('activeWorkspace') ?? first.id;
+		return this.createAndShow(firstWorkspaceName.trim() || mainMessages()['dialog.workspace.first']);
+	}
+
+	private createAndShow(name: string): string {
+		const created = newWorkspace(name);
 		store.set('workspaces', [...this.list(), created]);
 		this.choose(created.id);
+		return created.id;
+	}
+
+	reorder(ids: string[]): void {
+		store.set('workspaces', reorderWorkspaces(this.list(), ids));
+		this.services.showWorkspace(store.get('activeWorkspace'));
 	}
 
 	// The initials keep the hue the workspace had.
@@ -50,29 +66,44 @@ export class Workspaces {
 		this.services.showWorkspace(store.get('activeWorkspace'));
 	}
 
-	// Its services stay, in no workspace, which puts them in every one.
 	async remove(id: string): Promise<void> {
 		const workspace = this.list().find(candidate => candidate.id === id);
 		if ( !workspace ) return;
 		const messages = mainMessages();
+		const itsServices = store.get('services').filter(service => service.workspace === id);
+		const destinations = itsServices.length ? this.list().filter(candidate => candidate.id !== id) : [];
+		const buttons = itsServices.length
+			? [...destinations.map(other => fill(messages['deleteWorkspace.moveTo'], { name: other.name })), messages['deleteWorkspace.deleteServices'], messages['dialog.cancel']]
+			: [messages['deleteWorkspace.confirm'], messages['dialog.cancel']];
+		const cancel = buttons.length - 1;
+		const detail = !itsServices.length ? '' : destinations.length ? messages['deleteWorkspace.detail'] : messages['deleteWorkspace.detail.last'];
 		const { response } = await dialog.showMessageBox(this.window, {
-			type: 'question', buttons: [messages['deleteWorkspace.confirm'], messages['dialog.cancel']], defaultId: 1, cancelId: 1,
-			message: fill(messages['deleteWorkspace.message'], { name: workspace.name }), detail: messages['deleteWorkspace.detail']
+			type: 'question', buttons, defaultId: cancel, cancelId: cancel,
+			message: fill(messages['deleteWorkspace.message'], { name: workspace.name }), detail
 		});
-		if ( response !== 0 ) return;
-		store.set('services', store.get('services').map(service => service.workspace === id ? { ...service, workspace: '' } : service));
+		if ( response === cancel ) return;
+		const destination = destinations[response];
+		for ( const service of itsServices ) {
+			if ( destination ) this.services.moveToWorkspace(service.id, destination.id);
+			else await this.services.remove(service.id);
+		}
 		store.set('workspaces', this.list().filter(candidate => candidate.id !== id));
 		this.choose(null);
 	}
 
-	showMenu(): void {
-		const items = workspaceMenu(this.list(), store.get('activeWorkspace'), {
-			choose: workspace => this.choose(workspace),
+	showTabMenu(id: ActiveWorkspace): void {
+		const items = workspaceTabMenu(id, {
 			create: () => this.askForName(null),
-			rename: id => this.askForName(id),
-			changeIcon: id => this.askForIcon(id),
-			remove: id => { this.remove(id); }
-		}, mainMessages(), workspaceImage);
+			rename: workspace => this.askForName(workspace),
+			changeIcon: workspace => this.askForIcon(workspace),
+			remove: workspace => { this.remove(workspace); }
+		}, mainMessages());
 		Menu.buildFromTemplate(items).popup({ window: this.window });
+	}
+
+	showHiddenMenu(hidden: string[], x: number, y: number): void {
+		const services = this.services.list();
+		const items = hiddenWorkspacesMenu(this.list(), hidden, id => unreadIn(services, id), id => this.choose(id), workspaceImage);
+		if ( items.length ) Menu.buildFromTemplate(items).popup({ window: this.window, x: Math.round(x), y: Math.round(y) });
 	}
 }
