@@ -71,22 +71,16 @@ export class Workspaces {
 		if ( !workspace ) return;
 		const messages = mainMessages();
 		const itsServices = store.get('services').filter(service => service.workspace === id);
-		const destinations = itsServices.length ? this.list().filter(candidate => candidate.id !== id) : [];
-		const buttons = itsServices.length
-			? [...destinations.map(other => fill(messages['deleteWorkspace.moveTo'], { name: other.name })), messages['deleteWorkspace.deleteServices'], messages['dialog.cancel']]
-			: [messages['deleteWorkspace.confirm'], messages['dialog.cancel']];
-		const cancel = buttons.length - 1;
-		const detail = !itsServices.length ? '' : destinations.length ? messages['deleteWorkspace.detail'] : messages['deleteWorkspace.detail.last'];
+		const servicesGoToo = itsServices.length > 0;
 		const { response } = await dialog.showMessageBox(this.window, {
-			type: 'question', buttons, defaultId: cancel, cancelId: cancel,
-			message: fill(messages['deleteWorkspace.message'], { name: workspace.name }), detail
+			type: servicesGoToo ? 'warning' : 'question',
+			buttons: [messages[servicesGoToo ? 'deleteWorkspace.deleteServices' : 'deleteWorkspace.confirm'], messages['dialog.cancel']],
+			defaultId: 1, cancelId: 1,
+			message: fill(messages['deleteWorkspace.message'], { name: workspace.name }),
+			detail: servicesGoToo ? messages['deleteWorkspace.detail'] : ''
 		});
-		if ( response === cancel ) return;
-		const destination = destinations[response];
-		for ( const service of itsServices ) {
-			if ( destination ) this.services.moveToWorkspace(service.id, destination.id);
-			else await this.services.remove(service.id);
-		}
+		if ( response !== 0 ) return;
+		for ( const service of itsServices ) await this.services.remove(service.id);
 		store.set('workspaces', this.list().filter(candidate => candidate.id !== id));
 		this.choose(null);
 	}

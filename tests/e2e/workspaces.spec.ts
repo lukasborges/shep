@@ -257,12 +257,12 @@ test('renames a workspace in its tab on a double click or F2, keeping the name o
 	expect((await state()).workspaces[0]?.name).toBe('Office');
 });
 
-test('asks where a deleted workspace\'s services go, and moves them there with the workspace gone', async () => {
+test('warns that a deleted workspace\'s services go with it, and deletes them along with the workspace', async () => {
 	await answerQuestionsWith(0);
 	await chooseInNativeMenuOpenedBy(tabMenuOf('Personal'), 'Delete');
 	await expect.poll(async () => (await state()).workspaces.map(workspace => workspace.name)).toEqual(['Office', 'Side project']);
-	expect(await buttonsLastAsked()).toEqual(['Move Services to Office', 'Move Services to Side project', 'Delete With Its Services', 'Cancel']);
-	await expect.poll(async () => (await list()).filter(service => service.workspace === 'w1').map(service => service.name)).toEqual(['Mail', 'Family', 'Chat']);
+	expect(await buttonsLastAsked()).toEqual(['Delete With Its Services', 'Cancel']);
+	await expect.poll(async () => (await list()).map(service => service.name)).toEqual(['Mail']);
 });
 
 test('in the narrowest window, takes the names off the tabs from the right, keeping counts beside the icons, then puts the last ones behind a button, leaving room to drag the window', async () => {
