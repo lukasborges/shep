@@ -1,6 +1,8 @@
 import type { Messages } from './index.ts';
 
 export const ru: Messages = {
+	'migrating.title': 'Перенос данных',
+	'migrating.body': 'Shep переносит вход каждого сервиса на его рабочий стол. Подождите, это происходит только один раз.',
 	'welcome.title': 'Добро пожаловать в Shep',
 	'welcome.body': 'Сервис добавляется кнопкой + на панели слева.',
 	'welcome.firstService': 'Сервис — это сайт, которым вы уже пользуетесь в браузере, например WhatsApp, Gmail или Slack. Добавьте первый выделенной кнопкой + слева.',

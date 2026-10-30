@@ -1,6 +1,8 @@
 import type { Messages } from './index.ts';
 
 export const ja: Messages = {
+	'migrating.title': 'データを移行しています',
+	'migrating.body': 'Shep は各サービスのサインインをそのワークスペースに移しています。この処理は一度だけです。しばらくお待ちください。',
 	'welcome.title': 'Shep へようこそ',
 	'welcome.body': '左のバーの + からサービスを追加してください。',
 	'welcome.firstService': 'サービスとは、WhatsApp、Gmail、Slack など、ブラウザーで使っているサイトのことです。左の強調された + から最初のサービスを追加してください。',

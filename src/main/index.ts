@@ -26,7 +26,7 @@ import { normalizeUrl } from '../shared/address.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '../shared/preferences.ts';
 import { leavesFullScreen, shortcutFor, type KeyInput, type ShortcutAction } from './shortcuts.ts';
 import { setWorkspaceImages } from './workspaceimages.ts';
-import { settleSavedServicesIntoWorkspaces } from './workspacesessions.ts';
+import { letGoOfSessionsLeftBehind, savedServicesNeedSettling, settleSavedServicesIntoWorkspaces } from './workspacesessions.ts';
 import type { AppState } from '../shared/channels.ts';
 
 // The default, not setUserAgent per page: Cloudflare Turnstile fails any overridden
@@ -57,6 +57,7 @@ if ( !app.requestSingleInstanceLock() ) {
 	let tray: TrayIcon | null = null;
 	let updates: Updates | null = null;
 	let quitting = false;
+	let migrating = savedServicesNeedSettling();
 	let pendingPick: ((id: string | null) => void) | null = null;
 	const spelledSessions = new Set<Electron.Session>();
 
@@ -114,7 +115,8 @@ if ( !app.requestSingleInstanceLock() ) {
 		dontDisturb: store.get('dontDisturb'),
 		workspaces: store.get('workspaces'),
 		activeWorkspace: store.get('activeWorkspace'),
-		language: resolvedLanguage()
+		language: resolvedLanguage(),
+		migrating
 	});
 	const announceState = () => {
 		const state = appState();
@@ -294,7 +296,6 @@ if ( !app.requestSingleInstanceLock() ) {
 		updates = new Updates(window);
 		updates.check(false);
 		applySpelling(window.webContents.session);
-		settleSavedServicesIntoWorkspaces();
 		services = new ServiceHost(window, {
 			edit: id => overlay?.open({ dialog: 'edit', serviceId: id }),
 			shortcut: handleShortcut,
@@ -320,8 +321,14 @@ if ( !app.requestSingleInstanceLock() ) {
 		workspaces = new Workspaces(window, services,
 			id => overlay?.open({ dialog: 'workspace', workspaceId: id }),
 			id => overlay?.open({ dialog: 'workspaceIcon', workspaceId: id }));
-		window.webContents.once('did-finish-load', () => {
+		window.webContents.once('did-finish-load', async () => {
+			if ( migrating ) {
+				await settleSavedServicesIntoWorkspaces();
+				migrating = false;
+				announceState();
+			}
 			services?.start();
+			letGoOfSessionsLeftBehind();
 			const lockOnStart = preferences().lockOnStart && store.get('lockPasswordHash') !== '';
 			if ( store.get('locked') || lockOnStart ) lock();
 		});

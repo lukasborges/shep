@@ -21,6 +21,7 @@ export interface AppState {
 	activeWorkspace: ActiveWorkspace;
 	// resolved: the desktop's when the preference is 'auto'
 	language: string;
+	migrating: boolean;
 }
 
 export type InvokeChannel = (typeof INVOKE_CHANNELS)[number];

@@ -18,6 +18,7 @@ interface Schema {
 	// a lock outlives a restart, or quitting would be the way past it
 	locked: boolean;
 	windowBounds: WindowBounds | null;
+	sessionsLeftBehind: string[];
 }
 
 // shep.json, not config.json: the Ext app's config.json may still sit in the same folder, with another shape.
@@ -25,7 +26,7 @@ export const store = new Store<Schema>({
 	name: 'shep',
 	defaults: {
 		services: [], activeServiceId: null, permissions: {}, dontDisturb: false, workspaces: [], activeWorkspace: null,
-		preferences: DEFAULT_PREFERENCES, lockPasswordHash: '', locked: false, windowBounds: null
+		preferences: DEFAULT_PREFERENCES, lockPasswordHash: '', locked: false, windowBounds: null, sessionsLeftBehind: []
 	}
 });
 

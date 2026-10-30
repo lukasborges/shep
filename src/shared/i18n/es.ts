@@ -1,6 +1,8 @@
 import type { Messages } from './index.ts';
 
 export const es: Messages = {
+	'migrating.title': 'Migrando sus datos',
+	'migrating.body': 'Shep está llevando el inicio de sesión de cada servicio a su área de trabajo. Espere, esto solo ocurre una vez.',
 	'welcome.title': 'Bienvenido a Shep',
 	'welcome.body': 'Añada un servicio con el + de la barra de la izquierda.',
 	'welcome.firstService': 'Un servicio es un sitio que ya usa en el navegador, como WhatsApp, Gmail o Slack. Añada el primero con el + destacado a la izquierda.',

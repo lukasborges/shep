@@ -78,7 +78,7 @@ test('answers a window a service opened in its workspace\'s session as that serv
 	}
 });
 
-test('starts each workspace\'s session from the sign-ins its services had before, puts the services in no workspace into a new one, and lets go of the sessions nothing uses', async () => {
+test('starts each workspace\'s session from the sign-ins its services had before, leaving out caches and redoing a copy left half done, puts the services in no workspace into a new one, and lets go of the sessions nothing uses', async () => {
 	const page = at('127.0.0.1', '/service.html');
 	const userDataDir = mkdtempSync(join(tmpdir(), 'shep-next-test-'));
 	const before = await launchShep({ userDataDir });
@@ -89,7 +89,12 @@ test('starts each workspace\'s session from the sign-ins its services had before
 	}, page);
 	await before.app.close();
 
-	mkdirSync(join(userDataDir, 'Partitions', 'service-2'), { recursive: true });
+	const partitions = join(userDataDir, 'Partitions');
+	mkdirSync(join(partitions, 'shared', 'Cache'), { recursive: true });
+	writeFileSync(join(partitions, 'shared', 'Cache', 'rebuilt-by-chromium'), '');
+	mkdirSync(join(partitions, 'workspace-w1.migrating'), { recursive: true });
+	writeFileSync(join(partitions, 'workspace-w1.migrating', 'left-by-an-interrupted-copy'), '');
+	mkdirSync(join(partitions, 'service-2'), { recursive: true });
 	writeFileSync(join(userDataDir, 'shep.json'), JSON.stringify({
 		services: [
 			serviceRecord('1', page, { workspace: 'w1', partition: 'persist:shared' }),
@@ -103,13 +108,17 @@ test('starts each workspace\'s session from the sign-ins its services had before
 		const app = after;
 		await expect.poll(() => storageIn(app, page)).toMatch(/[/\\]Partitions[/\\]workspace-w1$/);
 		expect(await inService<string>(app, page, 'document.cookie')).toContain('signed=in');
-		expect(existsSync(join(userDataDir, 'Partitions', 'service-2'))).toBe(false);
-		expect(existsSync(join(userDataDir, 'Partitions', 'shared'))).toBe(false);
+		expect(existsSync(join(partitions, 'workspace-w1', 'Cache', 'rebuilt-by-chromium'))).toBe(false);
+		expect(existsSync(join(partitions, 'workspace-w1', 'left-by-an-interrupted-copy'))).toBe(false);
+		expect(existsSync(join(partitions, 'workspace-w1.migrating'))).toBe(false);
+		await expect.poll(() => existsSync(join(partitions, 'service-2')) || existsSync(join(partitions, 'shared'))).toBe(false);
 		expect(await app.window.evaluate(() => window.shep.invoke('services:record', '1'))).not.toHaveProperty('partition');
-		const { workspaces } = await app.window.evaluate(() => window.shep.invoke('app:state')) as AppState;
+		const { workspaces, migrating } = await app.window.evaluate(() => window.shep.invoke('app:state')) as AppState;
+		expect(migrating).toBe(false);
+		await expect(app.window.locator('.migrating')).toHaveCount(0);
 		const personal = workspaces.find(workspace => workspace.name === 'Personal');
 		expect(((await app.window.evaluate(() => window.shep.invoke('services:record', '2'))) as ServiceRecord).workspace).toBe(personal?.id);
-		expect(existsSync(join(userDataDir, 'Partitions', 'workspace-' + personal?.id))).toBe(true);
+		expect(existsSync(join(partitions, 'workspace-' + personal?.id))).toBe(true);
 	} finally {
 		await closeShep(after);
 		rmSync(userDataDir, { recursive: true, force: true });

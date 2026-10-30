@@ -1,6 +1,8 @@
 import type { Messages } from './index.ts';
 
 export const de: Messages = {
+	'migrating.title': 'Ihre Daten werden übernommen',
+	'migrating.body': 'Shep verschiebt die Anmeldung jedes Dienstes auf seine Arbeitsfläche. Bitte warten, das geschieht nur einmal.',
 	'welcome.title': 'Willkommen bei Shep',
 	'welcome.body': 'Ein Dienst wird mit dem + in der Leiste links hinzugefügt.',
 	'welcome.firstService': 'Ein Dienst ist eine Website, die Sie schon im Browser nutzen, etwa WhatsApp, Gmail oder Slack. Fügen Sie den ersten mit dem hervorgehobenen + links hinzu.',

@@ -1,6 +1,8 @@
 import type { Messages } from './index.ts';
 
 export const zhCN: Messages = {
+	'migrating.title': '正在迁移数据',
+	'migrating.body': 'Shep 正在把每个服务的登录移到它的工作区。请稍候，这只会发生一次。',
 	'welcome.title': '欢迎使用 Shep',
 	'welcome.body': '使用左侧栏中的 + 添加服务。',
 	'welcome.firstService': '服务是你已经在浏览器中使用的网站，例如 WhatsApp、Gmail 或 Slack。用左侧突出显示的 + 添加第一个服务。',

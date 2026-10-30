@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { onlyServiceInSessionOrOnOrigin, pageTitleBesideName, partitionOf, signInsToCarryOver, SHARED_PARTITION, workspacePartition, type ServiceRecord, type ServiceSavedWithASessionOfItsChoosing } from '../../src/shared/service.ts';
+import { isCacheChromiumRebuilds, onlyServiceInSessionOrOnOrigin, pageTitleBesideName, partitionOf, signInsToCarryOver, SHARED_PARTITION, workspacePartition, type ServiceRecord, type ServiceSavedWithASessionOfItsChoosing } from '../../src/shared/service.ts';
 
 const service = (id: string, url: string, workspace = '') => ({ id, url, workspace }) as ServiceRecord;
 const saved = (id: string, workspace: string, partition?: string) => ({ ...service(id, 'https://example.com/', workspace), partition }) as ServiceSavedWithASessionOfItsChoosing;
@@ -51,6 +51,17 @@ test('lets go of every session a service signed in to before, once its workspace
 	assert.deepEqual(signInsToCarryOver([saved('1', 'w1', SHARED_PARTITION), saved('2', 'w2', 'persist:service-2')]).unused, [SHARED_PARTITION, 'persist:service-2']);
 	assert.deepEqual(signInsToCarryOver([saved('1', 'w1', SHARED_PARTITION), saved('2', 'w1', 'persist:whatsapp_2')]).unused, [SHARED_PARTITION, 'persist:whatsapp_2']);
 	assert.deepEqual(signInsToCarryOver([saved('1', 'w1', 'persist:workspace-w1')]).unused, []);
+});
+
+test('leaves out of a session\'s copy only the caches Chromium fills again, keeping every sign-in and site\'s data', () => {
+	assert.equal(isCacheChromiumRebuilds('Cache'), true);
+	assert.equal(isCacheChromiumRebuilds('Cache/Cache_Data/data_0'), true);
+	assert.equal(isCacheChromiumRebuilds('Code Cache\\js\\index'), true);
+	assert.equal(isCacheChromiumRebuilds('GPUCache'), true);
+	assert.equal(isCacheChromiumRebuilds(''), false);
+	assert.equal(isCacheChromiumRebuilds('Network/Cookies'), false);
+	assert.equal(isCacheChromiumRebuilds('IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb'), false);
+	assert.equal(isCacheChromiumRebuilds('Service Worker/CacheStorage'), false);
 });
 
 test('shows the page title beside the name only when the name does not already say it, whatever the case or accents', () => {

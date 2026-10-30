@@ -3,7 +3,7 @@ import type { AppState } from '../shared/channels.ts';
 import type { ActiveWorkspace } from '../shared/workspace.ts';
 import { workspaceImages } from './workspaceImages.ts';
 
-export const appState = $state<AppState>({ dontDisturb: false, workspaces: [], activeWorkspace: null, language: '' });
+export const appState = $state<AppState>({ dontDisturb: false, workspaces: [], activeWorkspace: null, language: '', migrating: false });
 
 export const services = $state<{ list: ServiceState[]; hover: string }>({
 	list: [],

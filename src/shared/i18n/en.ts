@@ -1,4 +1,6 @@
 export const en = {
+	'migrating.title': 'Migrating your data',
+	'migrating.body': 'Shep is moving the sign-in of each service into its workspace. Please wait, this happens only once.',
 	'welcome.title': 'Welcome to Shep',
 	'welcome.body': 'Add a service with the + in the bar on the left.',
 	'welcome.firstService': 'A service is a site you already use in the browser, such as WhatsApp, Gmail or Slack. Add the first one with the highlighted + on the left.',

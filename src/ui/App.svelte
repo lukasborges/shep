@@ -4,6 +4,7 @@
 	import TitleBar from './TitleBar.svelte';
 	import Rail from './Rail.svelte';
 	import Welcome from './Welcome.svelte';
+	import Migrating from './Migrating.svelte';
 
 	const messages = $derived(messagesFor(appState.language || window.shep.locale));
 	loadServices();
@@ -20,6 +21,9 @@
 		</main>
 	</div>
 </div>
+{#if appState.migrating}
+	<Migrating {messages} />
+{/if}
 
 <style>
 	.shell {

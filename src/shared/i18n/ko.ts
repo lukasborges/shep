@@ -1,6 +1,8 @@
 import type { Messages } from './index.ts';
 
 export const ko: Messages = {
+	'migrating.title': '데이터를 옮기는 중',
+	'migrating.body': 'Shep이 각 서비스의 로그인을 해당 작업 공간으로 옮기고 있습니다. 한 번만 일어나는 일이니 잠시 기다리십시오.',
 	'welcome.title': 'Shep에 오신 것을 환영합니다',
 	'welcome.body': '왼쪽 막대의 +로 서비스를 추가하십시오.',
 	'welcome.firstService': '서비스는 WhatsApp, Gmail, Slack처럼 브라우저에서 이미 쓰는 사이트입니다. 왼쪽의 강조된 +로 첫 서비스를 추가하십시오.',

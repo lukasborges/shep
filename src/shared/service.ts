@@ -81,3 +81,10 @@ export function signInsToCarryOver(services: readonly ServiceSavedWithASessionOf
 	const unused = [...new Set(services.map(chosen))].filter(partition => !services.some(service => partitionOf(service) === partition));
 	return { copies, unused };
 }
+
+const CACHES_CHROMIUM_REBUILDS = new Set(['Cache', 'Code Cache', 'GPUCache', 'DawnGraphiteCache', 'DawnWebGPUCache', 'GrShaderCache', 'GraphiteDawnCache', 'ShaderCache']);
+
+export function isCacheChromiumRebuilds(pathInSession: string): boolean {
+	const [top] = pathInSession.split(/[/\\]/);
+	return top !== undefined && CACHES_CHROMIUM_REBUILDS.has(top);
+}
