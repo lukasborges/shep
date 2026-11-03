@@ -6,10 +6,10 @@
 	const { messages, workspaceId, onclose }: { messages: Messages; workspaceId: string; onclose: () => void } = $props();
 
 	let workspace = $state<Workspace | null>(null);
-	$effect(() => { window.shep.invoke('workspaces:get', workspaceId).then(found => { workspace = found as Workspace | null; }); });
+	$effect(() => { window.tessely.invoke('workspaces:get', workspaceId).then(found => { workspace = found as Workspace | null; }); });
 
 	async function choose(icon: WorkspaceIcon | null) {
-		await window.shep.invoke('workspaces:setIcon', workspaceId, icon);
+		await window.tessely.invoke('workspaces:setIcon', workspaceId, icon);
 		onclose();
 	}
 </script>

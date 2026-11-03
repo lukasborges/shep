@@ -37,7 +37,7 @@ if ( !preferences().hardwareAcceleration ) app.disableHardwareAcceleration();
 
 if ( process.platform === 'linux' ) {
 	// The Wayland app_id the desktop entry matches, or the window is an iconless second app.
-	app.commandLine.appendSwitch('class', 'shep');
+	app.commandLine.appendSwitch('class', 'tessely');
 	// Under XWayland the screen-share portal sees X windows only, never the screens.
 	app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
 }

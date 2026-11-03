@@ -5,15 +5,15 @@ import { _electron, type ElectronApplication, type Page } from 'playwright';
 
 export const repoRoot = resolve(__dirname, '..', '..', '..');
 
-export interface Shep {
+export interface Tessely {
 	app: ElectronApplication;
 	window: Page;
 	userDataDir: string;
 }
 
 // A profile of its own per launch, or the run would read the developer's services and talk to the network.
-export async function launchShep({ store, userDataDir = mkdtempSync(join(tmpdir(), 'shep-next-test-')) }: { store?: Record<string, unknown>; userDataDir?: string } = {}): Promise<Shep> {
-	if ( store ) writeFileSync(join(userDataDir, 'shep.json'), JSON.stringify(store));
+export async function launchTessely({ store, userDataDir = mkdtempSync(join(tmpdir(), 'tessely-next-test-')) }: { store?: Record<string, unknown>; userDataDir?: string } = {}): Promise<Tessely> {
+	if ( store ) writeFileSync(join(userDataDir, 'tessely.json'), JSON.stringify(store));
 
 	const app = await _electron.launch({
 		// Every expectation here is written in English, and with no language of its own the app would
@@ -28,10 +28,10 @@ export async function launchShep({ store, userDataDir = mkdtempSync(join(tmpdir(
 	return { app, window, userDataDir };
 }
 
-export async function closeShep(shep: Shep | undefined): Promise<void> {
-	if ( !shep ) return;
-	await shep.app.close();
-	rmSync(shep.userDataDir, { recursive: true, force: true });
+export async function closeTessely(tessely: Tessely | undefined): Promise<void> {
+	if ( !tessely ) return;
+	await tessely.app.close();
+	rmSync(tessely.userDataDir, { recursive: true, force: true });
 }
 
 export function serviceRecord(id: string, url: string, overrides: Record<string, unknown> = {}) {
@@ -43,24 +43,24 @@ export function serviceRecord(id: string, url: string, overrides: Record<string,
 
 // Runs in the page of the service whose address starts with urlPrefix. A navigation without
 // userGesture is one Chromium's back button skips, as it does in Chrome.
-export function inService<T>(shep: Shep, urlPrefix: string, expression: string, { userGesture = false } = {}): Promise<T> {
-	return shep.app.evaluate(async ({ webContents }, { urlPrefix, expression, userGesture }) => {
+export function inService<T>(tessely: Tessely, urlPrefix: string, expression: string, { userGesture = false } = {}): Promise<T> {
+	return tessely.app.evaluate(async ({ webContents }, { urlPrefix, expression, userGesture }) => {
 		const contents = webContents.getAllWebContents().find(candidate => candidate.getURL().startsWith(urlPrefix));
 		if ( !contents ) throw new Error('No page at ' + urlPrefix);
 		return contents.executeJavaScript(expression, userGesture);
 	}, { urlPrefix, expression, userGesture }) as Promise<T>;
 }
 
-export function inViewOverServices<T>(shep: Shep, hash: '#overlay' | '#find', expression: string): Promise<T> {
-	return shep.app.evaluate(async ({ webContents }, { hash, expression }) => {
+export function inViewOverServices<T>(tessely: Tessely, hash: '#overlay' | '#find', expression: string): Promise<T> {
+	return tessely.app.evaluate(async ({ webContents }, { hash, expression }) => {
 		const view = webContents.getAllWebContents().find(contents => contents.getURL().endsWith(hash));
 		if ( !view ) throw new Error('No view at ' + hash);
 		return view.executeJavaScript(expression);
 	}, { hash, expression }) as Promise<T>;
 }
 
-export function viewOverServicesShown(shep: Shep, hash: '#overlay' | '#find'): Promise<boolean> {
-	return shep.app.evaluate(({ BrowserWindow }, hash) =>
+export function viewOverServicesShown(tessely: Tessely, hash: '#overlay' | '#find'): Promise<boolean> {
+	return tessely.app.evaluate(({ BrowserWindow }, hash) =>
 		BrowserWindow.getAllWindows()[0]?.contentView.children.some(view => (view as unknown as { webContents: Electron.WebContents }).webContents.getURL().endsWith(hash) && view.getVisible()) ?? false, hash);
 }
 

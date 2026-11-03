@@ -10,7 +10,7 @@ app.on('web-contents-created', (event, contents) => {
 		try {
 			await wait(3000);
 			await contents.executeJavaScript('document.querySelector("input[name=identifier]").focus()');
-			await contents.insertText('shep.no.such.account.zq7@gmail.com');
+			await contents.insertText('tessely.no.such.account.zq7@gmail.com');
 			await contents.executeJavaScript('(document.querySelector("#identifierNext button") || document.querySelector("#identifierNext")).click()');
 			await wait(8000);
 			const text = await contents.executeJavaScript('document.body.innerText');

@@ -14,7 +14,7 @@ export class Updates {
 		const updater = this.updater;
 		if ( !updater ) return;
 		// This repository's own releases.
-		updater.setFeedURL({ provider: 'github', owner: 'lukasborges', repo: 'shep', vPrefixedTagName: false });
+		updater.setFeedURL({ provider: 'github', owner: 'lukasborges', repo: 'tessely', vPrefixedTagName: false });
 		updater.on('update-not-available', () => {
 			if ( !this.askedByHand ) return;
 			this.askedByHand = false;

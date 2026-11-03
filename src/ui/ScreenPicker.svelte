@@ -6,7 +6,7 @@
 
 	let chosen = $derived<string | null>(sources[0]?.id ?? null);
 
-	const answer = (id: string | null) => window.shep.invoke('screenShare:pick', id);
+	const answer = (id: string | null) => window.tessely.invoke('screenShare:pick', id);
 </script>
 
 <div class="dialog picker" role="dialog" aria-label={messages['share.title']}>

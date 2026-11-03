@@ -11,7 +11,7 @@
 	$effect(() => {
 		field?.focus();
 		if ( !workspaceId ) return;
-		window.shep.invoke('workspaces:get', workspaceId).then(found => {
+		window.tessely.invoke('workspaces:get', workspaceId).then(found => {
 			name = (found as Workspace | null)?.name ?? '';
 			field?.select();
 		});
@@ -20,7 +20,7 @@
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
 		if ( !name.trim() ) return;
-		await window.shep.invoke('workspaces:save', workspaceId, name);
+		await window.tessely.invoke('workspaces:save', workspaceId, name);
 		onclose();
 	}
 </script>

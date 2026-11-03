@@ -1,6 +1,6 @@
 import type { EventChannel, InvokeChannel } from '../shared/channels.ts';
 
-export interface ShepBridge {
+export interface TesselyBridge {
 	invoke(channel: InvokeChannel, ...args: unknown[]): Promise<unknown>;
 	// undefined, not void: the bridge clones what a listener returns, and a Svelte proxy cannot be cloned
 	on(channel: EventChannel, listener: (...args: unknown[]) => undefined): () => void;
@@ -9,6 +9,6 @@ export interface ShepBridge {
 
 declare global {
 	interface Window {
-		shep: ShepBridge;
+		tessely: TesselyBridge;
 	}
 }

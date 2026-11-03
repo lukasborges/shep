@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!--
+    The tray icon on Windows while something is unread: Logo.svg with the red
+    dot LogoTrayUnread.svg puts on the Linux one, and the same gap cut around
+    it so the dot and the hexagon do not merge at 16px. The dot is Adwaita
+    red 3, the badge colour the app uses everywhere else.
+  -->
+  <defs>
+    <linearGradient id="light" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6caff"/><stop offset="1" stop-color="#6b9ff2"/></linearGradient>
+    <linearGradient id="deep" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f93ff"/><stop offset="1" stop-color="#1d5ad6"/></linearGradient>
+    <linearGradient id="coral" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a5c"/><stop offset="1" stop-color="#e8481f"/></linearGradient>
+    <mask id="notch" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+      <rect width="128" height="128" fill="#ffffff"/>
+      <circle cx="104" cy="24" r="31.2" fill="#000000"/>
+    </mask>
+  </defs>
+  <g mask="url(#notch)" stroke-width="7.5" stroke-linejoin="round">
+    <polygon fill="url(#light)" stroke="url(#light)" points="35.5,10.25 58.883,23.75 58.883,50.75 35.5,64.25 12.117,50.75 12.117,23.75"/>
+    <polygon fill="url(#deep)" stroke="url(#deep)" points="92.5,10.25 115.883,23.75 115.883,50.75 92.5,64.25 69.117,50.75 69.117,23.75"/>
+    <polygon fill="url(#coral)" stroke="url(#coral)" points="64,59.75 87.383,73.25 87.383,100.25 64,113.75 40.617,100.25 40.617,73.25"/>
+  </g>
+  <circle cx="104" cy="24" r="21.6" fill="#e01b24"/>
+</svg>

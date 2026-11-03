@@ -11,6 +11,9 @@ export function startWithSystem(on: boolean, minimized: boolean): void {
 		app.setLoginItemSettings({ openAtLogin: on, args: minimized ? ['--hidden'] : [] });
 		return;
 	}
-	const launcher = new AutoLaunch({ name: 'Shep', path: process.env.APPIMAGE ?? process.execPath, isHidden: minimized });
+	const path = process.env.APPIMAGE ?? process.execPath;
+	// Shep's entry, from before the rename, would start the old executable as well.
+	new AutoLaunch({ name: 'Shep', path }).disable().catch(() => {});
+	const launcher = new AutoLaunch({ name: 'Tessely', path, isHidden: minimized });
 	(on ? launcher.enable() : launcher.disable()).catch(() => {});
 }

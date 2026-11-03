@@ -3,7 +3,7 @@
 	import type { AppState } from '../shared/channels.ts';
 	import Icon from './Icon.svelte';
 
-	let language = $state(window.shep.locale);
+	let language = $state(window.tessely.locale);
 	const messages = $derived(messagesFor(language));
 	let query = $state('');
 	let found = $state<{ active: number; matches: number } | null>(null);
@@ -11,23 +11,23 @@
 	const hasMatches = $derived(Boolean(query && found?.matches));
 	const nothingFound = $derived(Boolean(query && found && !found.matches));
 
-	window.shep.invoke('app:state').then(state => { language = (state as AppState).language; });
-	window.shep.on('app:state', state => { language = (state as AppState).language; });
-	window.shep.on('find:open', () => {
+	window.tessely.invoke('app:state').then(state => { language = (state as AppState).language; });
+	window.tessely.on('app:state', state => { language = (state as AppState).language; });
+	window.tessely.on('find:open', () => {
 		field?.focus();
 		field?.select();
 		if ( query ) search();
 	});
-	window.shep.on('find:found', (active, matches) => { found = { active: Number(active), matches: Number(matches) }; });
+	window.tessely.on('find:found', (active, matches) => { found = { active: Number(active), matches: Number(matches) }; });
 
 	function search(forward = true) {
 		if ( !query ) found = null;
-		window.shep.invoke('find:search', query, forward);
+		window.tessely.invoke('find:search', query, forward);
 	}
 
 	function close() {
 		found = null;
-		window.shep.invoke('find:close');
+		window.tessely.invoke('find:close');
 	}
 
 	function searchOnEnter(event: KeyboardEvent) {

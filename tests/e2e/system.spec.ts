@@ -2,7 +2,7 @@ import type { Server } from 'node:http';
 import { test, expect } from '@playwright/test';
 import type { ServiceState } from '../../src/shared/service.ts';
 import { hashPassword } from '../../src/main/password.ts';
-import { launchShep, closeShep, inService, serviceRecord, type Shep } from './helpers/launch.ts';
+import { launchTessely, closeTessely, inService, serviceRecord, type Tessely } from './helpers/launch.ts';
 import { serveFixtures } from './helpers/server.ts';
 
 let server: Server;
@@ -12,12 +12,12 @@ test.beforeAll(async () => { ({ server, at } = await serveFixtures()); });
 test.afterAll(() => { server.close(); });
 
 const twoServices = () => [serviceRecord('1', at('127.0.0.1', '/service.html'), { name: 'First' }), serviceRecord('2', at('127.0.0.1', '/long.html'), { name: 'Second' })];
-const inOverlay = <T>(shep: Shep, expression: string) => shep.app.evaluate(async ({ webContents }, expression) =>
+const inOverlay = <T>(tessely: Tessely, expression: string) => tessely.app.evaluate(async ({ webContents }, expression) =>
 	webContents.getAllWebContents().find(contents => contents.getURL().endsWith('#overlay'))?.executeJavaScript(expression), expression) as Promise<T>;
-const visibleServiceViews = (shep: Shep) => shep.app.evaluate(({ BrowserWindow }) =>
+const visibleServiceViews = (tessely: Tessely) => tessely.app.evaluate(({ BrowserWindow }) =>
 	BrowserWindow.getAllWindows()[0]?.contentView.children.filter(view => view.getVisible() && !(view as unknown as { webContents: Electron.WebContents }).webContents.getURL().endsWith('#overlay')).length);
-const list = (shep: Shep) => shep.window.evaluate(() => window.shep.invoke('services:list')) as Promise<ServiceState[]>;
-const fill = (shep: Shep, fields: Record<string, string>) => inOverlay(shep, `(() => {
+const list = (tessely: Tessely) => tessely.window.evaluate(() => window.tessely.invoke('services:list')) as Promise<ServiceState[]>;
+const fill = (tessely: Tessely, fields: Record<string, string>) => inOverlay(tessely, `(() => {
 	for ( const [name, value] of Object.entries(${JSON.stringify(fields)}) ) {
 		const field = document.querySelector('input[name=' + name + ']');
 		field.value = value;
@@ -26,7 +26,7 @@ const fill = (shep: Shep, fields: Record<string, string>) => inOverlay(shep, `((
 	document.querySelector('form').requestSubmit();
 })()`);
 // through before-input-event, which fill skips
-const typeInOverlay = (shep: Shep, keys: string) => shep.app.evaluate(({ webContents }, keys) => {
+const typeInOverlay = (tessely: Tessely, keys: string) => tessely.app.evaluate(({ webContents }, keys) => {
 	const overlay = webContents.getAllWebContents().find(contents => contents.getURL().endsWith('#overlay'));
 	for ( const key of keys ) {
 		overlay?.sendInputEvent({ type: 'keyDown', keyCode: key });
@@ -34,13 +34,13 @@ const typeInOverlay = (shep: Shep, keys: string) => shep.app.evaluate(({ webCont
 		overlay?.sendInputEvent({ type: 'keyUp', keyCode: key });
 	}
 }, keys);
-const loaded = (shep: Shep, url: string) => shep.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL() === url && !contents.isLoading()), url);
+const loaded = (tessely: Tessely, url: string) => tessely.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL() === url && !contents.isLoading()), url);
 
 test('asks for a password the first time it locks, then hides every service and ignores shortcuts until unlocked', async () => {
-	let shep: Shep | undefined;
+	let tessely: Tessely | undefined;
 	try {
-		shep = await launchShep({ store: { services: twoServices(), activeServiceId: '1' } });
-		const app = shep;
+		tessely = await launchTessely({ store: { services: twoServices(), activeServiceId: '1' } });
+		const app = tessely;
 		await expect.poll(() => visibleServiceViews(app)).toBe(1);
 
 		await app.window.locator('.rail .tool[aria-label="Lock"]').click();
@@ -64,80 +64,80 @@ test('asks for a password the first time it locks, then hides every service and 
 		await inOverlay(app, 'document.querySelector("form").requestSubmit()');
 		await expect.poll(() => visibleServiceViews(app)).toBe(1);
 	} finally {
-		await closeShep(shep);
+		await closeTessely(tessely);
 	}
 });
 
 test('stays locked across a restart, so quitting is no way past the lock', async () => {
-	let shep: Shep | undefined;
+	let tessely: Tessely | undefined;
 	try {
-		shep = await launchShep({ store: { services: twoServices(), activeServiceId: '1', lockPasswordHash: hashPassword('sheepdog'), locked: true } });
-		const app = shep;
+		tessely = await launchTessely({ store: { services: twoServices(), activeServiceId: '1', lockPasswordHash: hashPassword('sheepdog'), locked: true } });
+		const app = tessely;
 		await expect.poll(() => inOverlay<boolean>(app, '!!document.querySelector(".lock")')).toBe(true);
 		await expect.poll(() => loaded(app, at('127.0.0.1', '/service.html'))).toBe(true);
 		expect(await visibleServiceViews(app)).toBe(0);
 	} finally {
-		await closeShep(shep);
+		await closeTessely(tessely);
 	}
 });
 
 test('locks on start when that is the preference and there is a password', async () => {
-	let shep: Shep | undefined;
+	let tessely: Tessely | undefined;
 	try {
-		shep = await launchShep({ store: { services: twoServices(), lockPasswordHash: hashPassword('sheepdog'), preferences: { lockOnStart: true } } });
-		const app = shep;
+		tessely = await launchTessely({ store: { services: twoServices(), lockPasswordHash: hashPassword('sheepdog'), preferences: { lockOnStart: true } } });
+		const app = tessely;
 		await expect.poll(() => inOverlay<boolean>(app, '!!document.querySelector(".lock")')).toBe(true);
 	} finally {
-		await closeShep(shep);
+		await closeTessely(tessely);
 	}
 });
 
 test('hides the window on close while the tray has its icon, and keeps running', async () => {
-	let shep: Shep | undefined;
+	let tessely: Tessely | undefined;
 	try {
-		shep = await launchShep({ store: { services: twoServices() } });
-		const app = shep;
+		tessely = await launchTessely({ store: { services: twoServices() } });
+		const app = tessely;
 		await app.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.close());
 		await expect.poll(() => app.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map(window => window.isVisible()))).toEqual([false]);
 	} finally {
-		await closeShep(shep);
+		await closeTessely(tessely);
 	}
 });
 
 test('starts hidden in the tray when asked to start minimized', async () => {
-	let shep: Shep | undefined;
+	let tessely: Tessely | undefined;
 	try {
-		shep = await launchShep({ store: { preferences: { startMinimized: true } } });
-		const app = shep;
+		tessely = await launchTessely({ store: { preferences: { startMinimized: true } } });
+		const app = tessely;
 		await new Promise(resolve => setTimeout(resolve, 800));
 		expect(await app.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isVisible())).toBe(false);
 	} finally {
-		await closeShep(shep);
+		await closeTessely(tessely);
 	}
 });
 
 test('checks spelling in the languages picked in Preferences', async () => {
 	test.skip(process.platform === 'darwin', 'a Mac checks spelling with its own checker, in the languages it is set to');
-	let shep: Shep | undefined;
+	let tessely: Tessely | undefined;
 	try {
-		shep = await launchShep({ store: { services: twoServices(), preferences: { spellcheckLanguages: ['pt-BR'] } } });
-		const app = shep;
+		tessely = await launchTessely({ store: { services: twoServices(), preferences: { spellcheckLanguages: ['pt-BR'] } } });
+		const app = tessely;
 		await expect.poll(() => loaded(app, at('127.0.0.1', '/service.html'))).toBe(true);
 		const languages = await app.app.evaluate(({ webContents }, url) =>
 			webContents.getAllWebContents().find(contents => contents.getURL() === url)?.session.getSpellCheckerLanguages(), at('127.0.0.1', '/service.html'));
 		expect(languages).toEqual(['pt-BR']);
 	} finally {
-		await closeShep(shep);
+		await closeTessely(tessely);
 	}
 });
 
 // Where the system has no picker, X11 here, the app asks; a service for calls, or the screen permission is asked first.
 test('asks which screen or window to share, hands the page the choice, and keeps running', async () => {
 	test.skip(process.platform === 'darwin', 'a Mac opens its own picker, which nothing here can click');
-	let shep: Shep | undefined;
+	let tessely: Tessely | undefined;
 	try {
-		shep = await launchShep({ store: { services: [serviceRecord('1', at('127.0.0.1', '/service.html'), { media: true })], activeServiceId: '1' } });
-		const app = shep;
+		tessely = await launchTessely({ store: { services: [serviceRecord('1', at('127.0.0.1', '/service.html'), { media: true })], activeServiceId: '1' } });
+		const app = tessely;
 		await expect.poll(() => loaded(app, at('127.0.0.1', '/service.html'))).toBe(true);
 		let settled = '';
 		const answer = inService<string>(app, at('127.0.0.1', '/service.html'),
@@ -150,23 +150,23 @@ test('asks which screen or window to share, hands the page the choice, and keeps
 		expect(await answer).toMatch(/^(video|refused: \w+)$/);
 		expect(await app.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
 	} finally {
-		await closeShep(shep);
+		await closeTessely(tessely);
 	}
 });
 
 test('shows the screens and windows to pick from, and closes once one is chosen', async () => {
-	let shep: Shep | undefined;
+	let tessely: Tessely | undefined;
 	try {
-		shep = await launchShep();
-		const app = shep;
+		tessely = await launchTessely();
+		const app = tessely;
 		const sources = [{ id: 'screen:0:0', name: 'Entire Screen', thumbnail: '' }, { id: 'window:1:0', name: 'Terminal', thumbnail: '' }];
-		await app.window.evaluate(sources => window.shep.invoke('overlay:open', { dialog: 'screenPicker', sources }), sources);
+		await app.window.evaluate(sources => window.tessely.invoke('overlay:open', { dialog: 'screenPicker', sources }), sources);
 		await expect.poll(() => inOverlay<string[]>(app, '[...document.querySelectorAll(".picker .sources span")].map(span => span.textContent)')).toEqual(['Entire Screen', 'Terminal']);
 		await inOverlay(app, '[...document.querySelectorAll(".picker footer button")].find(button => button.textContent.trim() === "Share").click()');
 		const overlayShown = () => app.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.contentView.children
 			.some(view => (view as unknown as { webContents: Electron.WebContents }).webContents.getURL().endsWith('#overlay') && view.getVisible()));
 		await expect.poll(overlayShown).toBe(false);
 	} finally {
-		await closeShep(shep);
+		await closeTessely(tessely);
 	}
 });

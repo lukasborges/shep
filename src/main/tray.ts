@@ -31,7 +31,7 @@ export class TrayIcon {
 	show(on: boolean): void {
 		if ( on && !this.tray ) {
 			this.tray = new Tray(icon(this.unread));
-			this.tray.setToolTip('Shep');
+			this.tray.setToolTip('Tessely');
 			this.tray.on('click', () => this.actions.toggleWindow());
 			this.refreshMenu();
 		}

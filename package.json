@@ -1,19 +1,19 @@
 {
-	"name": "Shep",
-	"productName": "Shep",
+	"name": "Tessely",
+	"productName": "Tessely",
 	"version": "1.6.4",
 	"description": "One window for the web apps you already use in the browser.",
 	"main": "out/main/index.js",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/lukasborges/shep.git"
+		"url": "https://github.com/lukasborges/tessely.git"
 	},
 	"bugs": {
-		"url": "https://github.com/lukasborges/shep/issues"
+		"url": "https://github.com/lukasborges/tessely/issues"
 	},
-	"homepage": "https://github.com/lukasborges/shep",
+	"homepage": "https://github.com/lukasborges/tessely",
 	"keywords": [
-		"Shep",
+		"Tessely",
 		"GNOME",
 		"web apps",
 		"messaging",
@@ -38,7 +38,7 @@
 		"clean": "node -e \"for ( const directory of ['dist', 'out'] ) require('fs').rmSync(directory, { recursive: true, force: true })\""
 	},
 	"build": {
-		"productName": "Shep",
+		"productName": "Tessely",
 		"appId": "io.github.lukasborges.shep",
 		"asar": true,
 		"electronVersion": "44.10.0",
@@ -53,10 +53,10 @@
 					"Terminal": "false",
 					"Type": "Application",
 					"Categories": "GTK;GNOME;Network;Email;Chat;InstantMessaging;",
-					"StartupWMClass": "shep"
+					"StartupWMClass": "tessely"
 				}
 			},
-			"artifactName": "Shep-${version}-linux-${arch}.${ext}",
+			"artifactName": "Tessely-${version}-linux-${arch}.${ext}",
 			"executableArgs": [
 				"--no-sandbox"
 			],
@@ -81,9 +81,15 @@
 				}
 			]
 		},
+		"deb": {
+			"fpm": [
+				"--replaces=shep",
+				"--conflicts=shep"
+			]
+		},
 		"win": {
 			"icon": "resources/installer/icon.ico",
-			"artifactName": "Shep-${version}-windows-${arch}.${ext}",
+			"artifactName": "Tessely-${version}-windows-${arch}.${ext}",
 			"verifyUpdateCodeSignature": false,
 			"target": [
 				{
@@ -103,7 +109,7 @@
 		"mac": {
 			"icon": "resources/logo/1024x1024.png",
 			"category": "public.app-category.social-networking",
-			"artifactName": "Shep-${version}-mac-${arch}.${ext}",
+			"artifactName": "Tessely-${version}-mac-${arch}.${ext}",
 			"identity": "-",
 			"extendInfo": {
 				"NSCameraUsageDescription": "A service you add may ask for the camera, for a call.",
@@ -130,8 +136,8 @@
 			"oneClick": false,
 			"perMachine": false,
 			"allowToChangeInstallationDirectory": true,
-			"shortcutName": "Shep",
-			"artifactName": "Shep-${version}-windows-${arch}-setup.${ext}"
+			"shortcutName": "Tessely",
+			"artifactName": "Tessely-${version}-windows-${arch}-setup.${ext}"
 		},
 		"directories": {
 			"buildResources": "resources/installer/",
@@ -141,7 +147,7 @@
 			{
 				"provider": "github",
 				"owner": "lukasborges",
-				"repo": "shep",
+				"repo": "tessely",
 				"vPrefixedTagName": false,
 				"releaseType": "draft"
 			}
@@ -149,7 +155,6 @@
 		"files": [
 			"out/**/*",
 			"resources/Icon.png",
-			"resources/IconWindows.png",
 			"resources/IconTray*.png"
 		]
 	},

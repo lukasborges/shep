@@ -53,6 +53,6 @@ test('offers only copy over plain text, and a search when the selection holds le
 
 test('puts at most five spelling suggestions above the editing items, and says when there are none', () => {
 	const suggestions = ['a', 'b', 'c', 'd', 'e', 'f'];
-	assert.deepEqual(labels({ isEditable: true, misspelledWord: 'shepp', dictionarySuggestions: suggestions }), ['a', 'b', 'c', 'd', 'e', '---', 'Add to Dictionary', '---', 'Cut', 'Copy', 'Paste']);
+	assert.deepEqual(labels({ isEditable: true, misspelledWord: 'tesselyp', dictionarySuggestions: suggestions }), ['a', 'b', 'c', 'd', 'e', '---', 'Add to Dictionary', '---', 'Cut', 'Copy', 'Paste']);
 	assert.equal(labels({ isEditable: true, misspelledWord: 'qqq' })[0], 'No Spelling Suggestions');
 });

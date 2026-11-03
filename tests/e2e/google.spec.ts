@@ -8,13 +8,13 @@ import { repoRoot, serviceRecord } from './helpers/launch.ts';
 
 const SIGN_IN = 'https://accounts.google.com/signin/v2/identifier?service=mail&continue=https://mail.google.com/mail/';
 
-test.skip(!process.env.SHEP_NETWORK, 'needs the network; set SHEP_NETWORK=1');
+test.skip(!process.env.TESSELY_NETWORK, 'needs the network; set TESSELY_NETWORK=1');
 
 test('takes a fresh sign-in past Google\'s "This browser or app may not be secure", to its answer that no account has the address typed', async () => {
 	test.setTimeout(60000);
-	const userDataDir = mkdtempSync(join(tmpdir(), 'shep-google-'));
+	const userDataDir = mkdtempSync(join(tmpdir(), 'tessely-google-'));
 	try {
-		writeFileSync(join(userDataDir, 'shep.json'), JSON.stringify({ services: [serviceRecord('1', SIGN_IN)], activeServiceId: '1' }));
+		writeFileSync(join(userDataDir, 'tessely.json'), JSON.stringify({ services: [serviceRecord('1', SIGN_IN)], activeServiceId: '1' }));
 		const electron = join(repoRoot, 'node_modules', '.bin', 'electron');
 		const probe = join(repoRoot, 'tests', 'e2e', 'fixtures', 'google-signin-probe.cjs');
 		const main = join(repoRoot, 'out', 'main', 'index.js');

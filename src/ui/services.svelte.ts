@@ -25,36 +25,36 @@ function sendWorkspaceImages(): void {
 	imagesDrawnFor = drawnFor;
 	const workspaces = JSON.parse(JSON.stringify(appState.workspaces));
 	imagesSent = imagesSent
-		.then(async () => { await window.shep.invoke('workspaces:images', await workspaceImages(workspaces)); })
+		.then(async () => { await window.tessely.invoke('workspaces:images', await workspaceImages(workspaces)); })
 		.catch(() => {});
 }
 
 export async function loadServices(): Promise<void> {
-	Object.assign(appState, await window.shep.invoke('app:state') as AppState);
-	window.shep.on('app:state', state => {
+	Object.assign(appState, await window.tessely.invoke('app:state') as AppState);
+	window.tessely.on('app:state', state => {
 		Object.assign(appState, state as AppState);
 		sendWorkspaceImages();
 	});
 	sendWorkspaceImages();
-	services.list = await window.shep.invoke('services:list') as ServiceState[];
-	window.shep.on('services:changed', list => { services.list = list as ServiceState[]; });
-	window.shep.on('services:hover', (id, url) => { if ( id === activeService()?.id ) services.hover = String(url ?? ''); });
+	services.list = await window.tessely.invoke('services:list') as ServiceState[];
+	window.tessely.on('services:changed', list => { services.list = list as ServiceState[]; });
+	window.tessely.on('services:hover', (id, url) => { if ( id === activeService()?.id ) services.hover = String(url ?? ''); });
 }
 
-export const activate = (id: string) => window.shep.invoke('services:activate', id);
-export const showServiceMenu = (id: string) => window.shep.invoke('services:menu', id);
-export const reorder = (ids: string[]) => window.shep.invoke('services:reorder', ids);
-export const openAddDialog = () => window.shep.invoke('overlay:open', { dialog: 'add' });
-export const navigate = (id: string, where: Navigation) => window.shep.invoke('service:navigate', id, where);
-export const resetZoom = (id: string) => window.shep.invoke('service:resetZoom', id);
-export const openFind = () => window.shep.invoke('find:open');
-export const setDontDisturb = (on: boolean) => window.shep.invoke('app:setDontDisturb', on);
-export const chooseWorkspace = (id: ActiveWorkspace) => window.shep.invoke('workspaces:choose', id);
-export const showWorkspaceTabMenu = (id: ActiveWorkspace) => window.shep.invoke('workspaces:tabMenu', id);
-export const showHiddenWorkspaces = (ids: string[], x: number, y: number) => window.shep.invoke('workspaces:hiddenMenu', ids, x, y);
-export const saveWorkspaceOrder = (ids: string[]) => window.shep.invoke('workspaces:reorder', ids);
-export const renameWorkspace = (id: string, name: string) => window.shep.invoke('workspaces:save', id, name);
-export const moveServiceToWorkspace = (id: string, workspace: string) => window.shep.invoke('services:moveToWorkspace', id, workspace);
-export const openNewWorkspaceDialog =() => window.shep.invoke('overlay:open', { dialog: 'workspace', workspaceId: null });
-export const openPreferences = () => window.shep.invoke('overlay:open', { dialog: 'preferences' });
-export const lockApp = () => window.shep.invoke('app:lock');
+export const activate = (id: string) => window.tessely.invoke('services:activate', id);
+export const showServiceMenu = (id: string) => window.tessely.invoke('services:menu', id);
+export const reorder = (ids: string[]) => window.tessely.invoke('services:reorder', ids);
+export const openAddDialog = () => window.tessely.invoke('overlay:open', { dialog: 'add' });
+export const navigate = (id: string, where: Navigation) => window.tessely.invoke('service:navigate', id, where);
+export const resetZoom = (id: string) => window.tessely.invoke('service:resetZoom', id);
+export const openFind = () => window.tessely.invoke('find:open');
+export const setDontDisturb = (on: boolean) => window.tessely.invoke('app:setDontDisturb', on);
+export const chooseWorkspace = (id: ActiveWorkspace) => window.tessely.invoke('workspaces:choose', id);
+export const showWorkspaceTabMenu = (id: ActiveWorkspace) => window.tessely.invoke('workspaces:tabMenu', id);
+export const showHiddenWorkspaces = (ids: string[], x: number, y: number) => window.tessely.invoke('workspaces:hiddenMenu', ids, x, y);
+export const saveWorkspaceOrder = (ids: string[]) => window.tessely.invoke('workspaces:reorder', ids);
+export const renameWorkspace = (id: string, name: string) => window.tessely.invoke('workspaces:save', id, name);
+export const moveServiceToWorkspace = (id: string, workspace: string) => window.tessely.invoke('services:moveToWorkspace', id, workspace);
+export const openNewWorkspaceDialog =() => window.tessely.invoke('overlay:open', { dialog: 'workspace', workspaceId: null });
+export const openPreferences = () => window.tessely.invoke('overlay:open', { dialog: 'preferences' });
+export const lockApp = () => window.tessely.invoke('app:lock');

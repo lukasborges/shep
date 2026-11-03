@@ -14,7 +14,7 @@ const { spawnSync } = require('child_process');
 const argv = process.argv.slice(2);
 const network = argv[0] === '--network';
 const command = network ? argv.slice(1) : argv;
-const environment = network ? { ...process.env, SHEP_NETWORK: '1' } : process.env;
+const environment = network ? { ...process.env, TESSELY_NETWORK: '1' } : process.env;
 
 // cmd.exe is what resolves playwright to the shim npm put on the PATH.
 const plainly = () => spawnSync(command[0], command.slice(1), { stdio: 'inherit', env: environment, shell: process.platform === 'win32' });

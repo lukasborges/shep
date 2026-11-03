@@ -12,7 +12,7 @@
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
-		const unlocked = await window.shep.invoke('lock:unlock', password);
+		const unlocked = await window.tessely.invoke('lock:unlock', password);
 		wrong = unlocked !== true;
 		if ( wrong ) {
 			password = '';

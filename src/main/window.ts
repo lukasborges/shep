@@ -36,15 +36,14 @@ export function createMainWindow(startHidden: boolean, saved: WindowBounds | nul
 		// Shown from the start, not on ready-to-show: on Wayland a window that was never mapped never paints,
 		// so ready-to-show never came and the app was left in the tray. The background colour keeps it from flashing.
 		show: !startHidden,
-		title: 'Shep',
+		title: 'Tessely',
 		titleBarStyle: 'hidden',
 		titleBarOverlay: titleBarOverlay(),
 		// centred in the title bar, whose height the overlay gives a Mac's buttons nowhere else
 		trafficLightPosition: { x: 12, y: (TITLE_BAR_HEIGHT - 14) / 2 },
 		backgroundColor: titleBarOverlay().color,
 		// X11 reads the window's own icon; Wayland matches the app_id to the desktop entry instead.
-		// Windows' taskbar shows it too, and there the mark goes without its box.
-		icon: join(__dirname, '../../resources', process.platform === 'win32' ? 'IconWindows.png' : 'Icon.png'),
+		icon: join(__dirname, '../../resources', 'Icon.png'),
 		webPreferences: {
 			preload: join(__dirname, '../preload/ui.js'),
 			contextIsolation: true,

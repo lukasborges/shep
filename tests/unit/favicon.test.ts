@@ -87,7 +87,7 @@ test('re-encodes an inline SVG favicon in base64, so its quotes survive a CSS ur
 	assert.equal(dataUrlParts(encoded ?? '')?.bytes.toString(), "<svg xmlns='http://www.w3.org/2000/svg'/>");
 });
 
-test('strips the Shep and Electron tokens from the user agent and keeps Chrome', () => {
-	const electron = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Shep/1.0.0 Chrome/152.0.7977.130 Electron/44.4.3 Safari/537.36';
+test('strips the Tessely and Electron tokens from the user agent and keeps Chrome', () => {
+	const electron = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Tessely/1.0.0 Chrome/152.0.7977.130 Electron/44.4.3 Safari/537.36';
 	assert.equal(withoutAppTokens(electron), 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.7977.130 Safari/537.36');
 });

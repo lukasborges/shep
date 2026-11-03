@@ -15,6 +15,6 @@
 
 ### Environment
 
-- Shep: <!-- Preferences › Advanced › About Shep -->
+- Tessely: <!-- Preferences › Advanced › About Tessely -->
 - Distribution and desktop: <!-- e.g. Fedora 44, GNOME on Wayland -->
 - Installed as: <!-- AppImage, deb, tarball, or from source -->

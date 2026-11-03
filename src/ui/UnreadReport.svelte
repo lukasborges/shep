@@ -5,7 +5,7 @@
 	const { messages, onclose }: { messages: Messages; onclose: () => void } = $props();
 
 	let rows = $state<{ name: string; pageTitle: string; unread: UnreadCount }[]>([]);
-	$effect(() => { window.shep.invoke('services:report').then(value => { rows = value as typeof rows; }); });
+	$effect(() => { window.tessely.invoke('services:report').then(value => { rows = value as typeof rows; }); });
 </script>
 
 <div class="dialog report" role="dialog" aria-label={messages['report.title']}>
