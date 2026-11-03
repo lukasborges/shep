@@ -5,8 +5,8 @@
 </div>
 
 <p align="center">
-  <img src="./resources/screenshots/shep-1.0-light.png" width="49%" alt="Shep with five services in the rail and GitHub open, light theme" />
-  <img src="./resources/screenshots/shep-1.0-dark.png" width="49%" alt="The same window in the dark theme" />
+  <img src="./resources/screenshots/shep-1.6-light.png" width="49%" alt="Shep with five services in the rail, in two workspaces, and GitHub open, light theme" />
+  <img src="./resources/screenshots/shep-1.6-dark.png" width="49%" alt="The same window in the dark theme" />
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@ Shep puts the web apps you already use in the browser in one window, with a rail
 
 - **Anything with an address.** WhatsApp, Gmail, Slack, Teams, Claude, or any URL you type, all in the rail.
 - **Workspaces.** Groups with their own sign-ins and unread counts, one on screen at a time.
-- **Unread counts.** Taken from page titles or the badge a page sets, with dots when either signals activity without a number.
+- **Unread counts.** From the page title or the badge the page sets, with a dot when either signals activity without a number or a service out of sight notifies.
 - **Links stay in the app.** They open signed in, in a window that shares the service's session.
 - **One rule for every service.** No per-service code to go stale when a site changes.
 - **No account and no server.** Free, open source, GPLv3.
