@@ -103,7 +103,7 @@ export const es: Messages = {
 	'about.body': 'Una ventana para las aplicaciones web que ya usa en el navegador.',
 	'about.licence': 'GNU General Public License v3',
 	'report.title': 'Informe de no leídos',
-	'report.body': 'Lo que dice el título de cada servicio, y la cuenta que se saca de él.',
+	'report.body': 'Lo que dice el título de cada servicio, y la cuenta, sacada del título o del distintivo que puso la página.',
 	'report.service': 'Servicio',
 	'report.pageTitle': 'Título',
 	'report.count': 'Cuenta',

@@ -14,6 +14,15 @@ export function countFromTitle(title: string): UnreadCount {
 
 export const isSomething = (count: UnreadCount) => count === '•' || count > 0;
 
+export function countFromBadge(contents: unknown): UnreadCount | null {
+	if ( contents === undefined ) return '•';
+	const count = Number(contents);
+	if ( !Number.isFinite(count) || count < 0 ) return null;
+	return Math.floor(count);
+}
+
+export const unreadFrom = (fromTitle: UnreadCount, fromBadge: UnreadCount) => isSomething(fromBadge) ? fromBadge : fromTitle;
+
 export const TITLE_BLINK_GRACE_MS = 1500;
 
 export function createBlinkGuard(report: (count: UnreadCount) => void, graceMs = TITLE_BLINK_GRACE_MS) {

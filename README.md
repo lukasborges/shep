@@ -20,7 +20,7 @@ Shep puts the web apps you already use in the browser in one window, with a rail
 
 - **Anything with an address.** WhatsApp, Gmail, Slack, Teams, Claude, or any URL you type, all in the rail.
 - **Workspaces.** Groups with their own sign-ins and unread counts, one on screen at a time.
-- **Unread counts.** Taken from page titles, with dots when a title signals activity without a number.
+- **Unread counts.** Taken from page titles or the badge a page sets, with dots when either signals activity without a number.
 - **Links stay in the app.** They open signed in, in a window that shares the service's session.
 - **One rule for every service.** No per-service code to go stale when a site changes.
 - **No account and no server.** Free, open source, GPLv3.
@@ -45,7 +45,7 @@ Services can be grouped into workspaces, one on screen at a time, each a tab in 
 
 ### Unread counts
 
-The count comes from the page title, the `(3)` that most web apps put in front of it. A title that signals activity without a number, such as `(•)`, draws a dot instead. A notification from a service out of sight puts a dot on its icon in the rail only, until the service is on screen.
+The count comes from the page title, the `(3)` that most web apps put in front of it, or from the badge a page sets for its app icon, which wins over the title while it shows something. Pages are told they run as an installed app, since some set their badge only then. A title or badge that signals activity without a number, such as `(•)`, draws a dot instead. A notification from a service out of sight puts a dot on its icon in the rail only, until the service is on screen.
 
 ### Links
 
@@ -141,7 +141,7 @@ On a Mac, `⌘` takes the place of `Ctrl`, and `⌥` of `Alt`. The Mac has keys 
 
 ## Troubleshooting
 
-- **A count looks wrong.** Preferences › Advanced › Unread Report shows what each service's title says and the count taken from it.
+- **A count looks wrong.** Preferences › Advanced › Unread Report shows what each service's title says and the count, taken from the title or from the badge the page set.
 - **A site refuses a sign-in.** Check User agent in Preferences › Advanced and leave it empty. A custom one is refused by some logins, such as Cloudflare's.
 - **The AppImage does not start.** It needs FUSE 2; see [Linux](#linux). Without it, run it with `--appimage-extract-and-run`.
 - **The first launch is blocked.** See [First launch on Windows and macOS](#first-launch-on-windows-and-macos).

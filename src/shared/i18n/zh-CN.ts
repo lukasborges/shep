@@ -103,7 +103,7 @@ export const zhCN: Messages = {
 	'about.body': '用一个窗口承载你已在浏览器中使用的网页应用。',
 	'about.licence': 'GNU General Public License v3',
 	'report.title': '未读报告',
-	'report.body': '每个服务的标题内容，以及从中读取的数量。',
+	'report.body': '每个服务的标题内容，以及数量：从标题或页面设置的徽章中读取。',
 	'report.service': '服务',
 	'report.pageTitle': '标题',
 	'report.count': '数量',

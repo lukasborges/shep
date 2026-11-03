@@ -3,6 +3,10 @@
 <title>Fixture service</title>
 <link rel="icon" sizes="16x16" href="/icon-16.png">
 <link rel="icon" sizes="64x64" href="/icon-64.png">
+<script>
+	window.installedWhenLoading = matchMedia('(display-mode: standalone)').matches;
+	window.badgeWrappedWhenLoading = !String(navigator.setAppBadge).includes('[native code]');
+</script>
 <body>
 	<a id="elsewhere" href="/away.html" target="_blank">elsewhere</a>
 	<a id="later" href="/away.html?later" onclick="event.preventDefault(); setTimeout(() => window.open(this.href), 300)">later</a>

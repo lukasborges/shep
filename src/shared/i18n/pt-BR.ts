@@ -103,7 +103,7 @@ export const ptBR: Messages = {
 	'about.body': 'Uma janela para os aplicativos web que você já usa no navegador.',
 	'about.licence': 'GNU General Public License v3',
 	'report.title': 'Relatório de não lidos',
-	'report.body': 'O que diz o título de cada serviço, e a contagem tirada dele.',
+	'report.body': 'O que diz o título de cada serviço, e a contagem, tirada do título ou do selo que a página definiu.',
 	'report.service': 'Serviço',
 	'report.pageTitle': 'Título',
 	'report.count': 'Contagem',

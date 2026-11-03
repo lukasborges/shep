@@ -4,7 +4,7 @@ import { PAGE_CORNER_RADIUS, RAIL_WIDTH, TITLE_BAR_HEIGHT } from '../shared/chro
 import { nameFromUrl, normalizeUrl } from '../shared/address.ts';
 import { onlyServiceInSessionOrOnOrigin, partitionOf, type Navigation, type ServiceRecord, type ServiceState, type UnreadCount } from '../shared/service.ts';
 import { preferences, store, updateService } from './store.ts';
-import { countFromTitle, createBlinkGuard, totalUnread } from './unread.ts';
+import { countFromBadge, countFromTitle, createBlinkGuard, totalUnread, unreadFrom } from './unread.ts';
 import { faviconFor, ICONS_BEYOND_FAVICONS } from './favicon.ts';
 import { followColorScheme } from './theme.ts';
 import { applyPermissionPolicy } from './permissions.ts';
@@ -26,6 +26,8 @@ import { isShownIn, type ActiveWorkspace } from '../shared/workspace.ts';
 interface RunningService {
 	view: WebContentsView;
 	unread: UnreadCount;
+	fromTitle: UnreadCount;
+	fromBadge: UnreadCount;
 	notifiedSinceSeen: boolean;
 	pageTitle: string;
 	// a video or slides the page itself put in full screen
@@ -115,6 +117,15 @@ export class ServiceHost {
 		const seen = !this.locked && this.window.isFocused() && store.get('activeServiceId') === id;
 		if ( !running || seen ) return;
 		running.notifiedSinceSeen = true;
+		this.announce();
+	}
+
+	noteBadge(id: string, contents: unknown): void {
+		const running = this.running.get(id);
+		const count = countFromBadge(contents);
+		if ( !running || count === null || count === running.fromBadge ) return;
+		running.fromBadge = count;
+		running.unread = unreadFrom(running.fromTitle, running.fromBadge);
 		this.announce();
 	}
 
@@ -437,10 +448,13 @@ export class ServiceHost {
 		const contents = view.webContents;
 		const blinkGuard = createBlinkGuard(count => {
 			const running = this.running.get(record.id);
-			if ( running ) running.unread = count;
+			if ( running ) {
+				running.fromTitle = count;
+				running.unread = unreadFrom(running.fromTitle, running.fromBadge);
+			}
 			this.announce();
 		});
-		this.running.set(record.id, { view, unread: 0, notifiedSinceSeen: false, pageTitle: '', pageFullScreen: false, disposeBlinkGuard: blinkGuard.dispose });
+		this.running.set(record.id, { view, unread: 0, fromTitle: 0, fromBadge: 0, notifiedSinceSeen: false, pageTitle: '', pageFullScreen: false, disposeBlinkGuard: blinkGuard.dispose });
 
 		const partition = partitionOf(record);
 		if ( !this.startedPartitions.has(partition) ) {
@@ -465,6 +479,7 @@ export class ServiceHost {
 		for ( const navigation of ['did-navigate', 'did-navigate-in-page', 'did-start-loading', 'did-stop-loading'] as const ) {
 			contents.on(navigation as 'did-navigate', announceSoon);
 		}
+		contents.on('did-navigate', () => this.noteBadge(record.id, 0));
 		contents.on('page-title-updated', (event, title) => {
 			const running = this.running.get(record.id);
 			if ( running ) running.pageTitle = title;

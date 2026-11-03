@@ -56,6 +56,33 @@ test('counts unread from the page title and shows the active service instead of 
 	await inFixture('document.title = "Fixture service"');
 });
 
+test('counts unread from the badge a page sets from its first script on, over its title, until the page clears it', async () => {
+	const unread = async () => (await list()).find(service => service.id === '1')?.unread;
+	expect(await inFixture('window.badgeWrappedWhenLoading')).toBe(true);
+	await inFixture('document.title = "(3) Fixture service"');
+	await inFixture('navigator.setAppBadge(7)');
+	await expect.poll(unread).toBe(7);
+	await inFixture('navigator.setAppBadge()');
+	await expect.poll(unread).toBe('•');
+	await inFixture('navigator.clearAppBadge()');
+	await expect.poll(unread).toBe(3);
+	await inFixture('document.title = "Fixture service"');
+	await expect.poll(unread).toBe(0);
+});
+
+test('tells the page it runs as an installed app from its first script on, as some set their badge only then', async () => {
+	expect(await inFixture('[window.installedWhenLoading, matchMedia("(display-mode: standalone)").matches, matchMedia("(display-mode: browser)").matches]')).toEqual([true, true, false]);
+});
+
+test('forgets a page\'s badge once the service loads another page, which sets its own', async () => {
+	const unread = async () => (await list()).find(service => service.id === '1')?.unread;
+	await inFixture('navigator.setAppBadge(7)');
+	await expect.poll(unread).toBe(7);
+	await inFixture('location.reload(), null');
+	await expect.poll(unread).toBe(0);
+	await expect.poll(async () => inFixture<boolean>('!!window.__shepNotifications')).toBe(true);
+});
+
 const faviconWidth = async (id: string) => {
 	await expect.poll(async () => (await list()).find(service => service.id === id)?.favicon ?? '').toMatch(/^data:image\/png;base64,/);
 	return shep.window.evaluate(async id => {

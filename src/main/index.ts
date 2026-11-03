@@ -212,6 +212,10 @@ if ( !app.requestSingleInstanceLock() ) {
 		const id = services?.idOf(event.sender);
 		if ( id ) services?.noteNotification(id);
 	});
+	ipcMain.on('service:badged', (event, contents) => {
+		const id = services?.idOf(event.sender);
+		if ( id ) services?.noteBadge(id, contents);
+	});
 	ipcMain.on('service:may-notify', event => {
 		const id = services?.idOf(event.sender);
 		event.returnValue = id ? services?.mayNotify(id) ?? false : false;

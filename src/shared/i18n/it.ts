@@ -103,7 +103,7 @@ export const it: Messages = {
 	'about.body': 'Una finestra per le applicazioni web già usate nel browser.',
 	'about.licence': 'GNU General Public License v3',
 	'report.title': 'Rapporto sui non letti',
-	'report.body': 'Cosa dice il titolo di ogni servizio e il conteggio ricavato.',
+	'report.body': 'Cosa dice il titolo di ogni servizio e il conteggio, ricavato dal titolo o dal badge impostato dalla pagina.',
 	'report.service': 'Servizio',
 	'report.pageTitle': 'Titolo',
 	'report.count': 'Conteggio',

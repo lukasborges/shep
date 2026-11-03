@@ -1,6 +1,6 @@
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { countFromTitle, createBlinkGuard, totalUnread, TITLE_BLINK_GRACE_MS, type UnreadCount } from '../../src/main/unread.ts';
+import { countFromBadge, countFromTitle, createBlinkGuard, totalUnread, unreadFrom, TITLE_BLINK_GRACE_MS, type UnreadCount } from '../../src/main/unread.ts';
 import { unreadWithNotification } from '../../src/shared/service.ts';
 
 test('reads the count in the shapes services write it in the title', () => {
@@ -24,6 +24,18 @@ test('believes a drop to nothing only once it has lasted, since some services bl
 	mock.timers.tick(TITLE_BLINK_GRACE_MS);
 	assert.deepEqual(reported, [4, 4, 0]);
 	mock.timers.reset();
+});
+
+test('reads the badge a page sets as the Badging API defines it, converting as Chromium does, and ignores what it would refuse', () => {
+	const badges = [7, 2.9, undefined, 0, '3', null, -1, NaN, Infinity, 'many'];
+	assert.deepEqual(badges.map(countFromBadge), [7, 2, '•', 0, 3, 0, null, null, null, null]);
+});
+
+test('believes the page\'s badge over its title, and the title once the badge is cleared', () => {
+	assert.equal(unreadFrom(3, 5), 5);
+	assert.equal(unreadFrom(3, '•'), '•');
+	assert.equal(unreadFrom(3, 0), 3);
+	assert.equal(unreadFrom(0, 0), 0);
 });
 
 test('says there is something in a service that notified since it was last seen, unless its title already counts it', () => {

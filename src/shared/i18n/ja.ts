@@ -103,7 +103,7 @@ export const ja: Messages = {
 	'about.body': 'ブラウザーで使っているウェブアプリを 1 つのウィンドウに。',
 	'about.licence': 'GNU General Public License v3',
 	'report.title': '未読レポート',
-	'report.body': '各サービスのタイトルと、そこから読み取った件数。',
+	'report.body': '各サービスのタイトルと件数。件数はタイトル、またはページが設定したバッジから読み取ります。',
 	'report.service': 'サービス',
 	'report.pageTitle': 'タイトル',
 	'report.count': '件数',

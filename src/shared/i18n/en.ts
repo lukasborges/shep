@@ -101,7 +101,7 @@ export const en = {
 	'about.body': 'One window for the web apps you already use in the browser.',
 	'about.licence': 'GNU General Public License v3',
 	'report.title': 'Unread Report',
-	'report.body': 'What each service\'s title says, and the count taken from it.',
+	'report.body': 'What each service\'s title says, and the count, taken from the title or from the badge the page set.',
 	'report.service': 'Service',
 	'report.pageTitle': 'Title',
 	'report.count': 'Count',

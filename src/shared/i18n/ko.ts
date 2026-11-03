@@ -103,7 +103,7 @@ export const ko: Messages = {
 	'about.body': '브라우저에서 쓰던 웹 앱을 창 하나에서.',
 	'about.licence': 'GNU General Public License v3',
 	'report.title': '읽지 않음 보고서',
-	'report.body': '각 서비스의 제목과 거기서 읽은 개수입니다.',
+	'report.body': '각 서비스의 제목과 개수입니다. 개수는 제목이나 페이지가 설정한 배지에서 읽습니다.',
 	'report.service': '서비스',
 	'report.pageTitle': '제목',
 	'report.count': '개수',
