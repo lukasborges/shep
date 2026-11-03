@@ -5,8 +5,8 @@ export const PAGE_CORNER_RADIUS = 8;
 // The rail and the title bar, which the system's window buttons are painted over,
 // so main needs the same values as the stylesheet.
 export const CHROME_COLOURS = {
-	light: { chrome: '#24506F', onChrome: '#E8F1F8' },
-	dark: { chrome: '#2A2A2E', onChrome: '#D0D0D6' }
+	light: { chrome: '#EEF1F6', onChrome: '#3A4356' },
+	dark: { chrome: '#282C35', onChrome: '#D3D8E2' }
 } as const;
 
 export type ColourScheme = keyof typeof CHROME_COLOURS;

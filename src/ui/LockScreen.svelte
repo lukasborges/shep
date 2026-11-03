@@ -63,11 +63,11 @@
 	}
 
 	input:focus {
-		box-shadow: 0 0 0 2px var(--rx-on-chrome);
+		box-shadow: 0 0 0 2px var(--rx-accent);
 	}
 
 	small {
-		color: #FF9B9B;
+		color: var(--rx-hue-red);
 	}
 
 	button {
@@ -75,8 +75,8 @@
 		padding: 0 22px;
 		border: 0;
 		border-radius: 8px;
-		background-color: var(--rx-on-chrome);
-		color: var(--rx-chrome);
+		background-color: var(--rx-accent);
+		color: var(--rx-on-accent);
 		font: inherit;
 		font-weight: 700;
 		cursor: pointer;

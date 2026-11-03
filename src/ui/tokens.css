@@ -1,10 +1,10 @@
 :root {
-	--rx-ink: #12222E;
+	--rx-ink: #1A2133;
 	--rx-surface: #FFFFFF;
-	--rx-muted: #5B7183;
-	--rx-chrome: #24506F;
-	--rx-on-chrome: #E8F1F8;
-	--rx-hover-on-chrome: rgba(255, 255, 255, 0.10);
+	--rx-muted: #5D6678;
+	--rx-chrome: #EEF1F6;
+	--rx-on-chrome: #3A4356;
+	--rx-hover-on-chrome: rgba(30, 41, 64, 0.07);
 	--rx-radius: 6px;
 	--rx-rail-gutter: 10px;
 	--rx-rail-button: 52px;
@@ -18,8 +18,9 @@
 		--rx-ink: #EDEDEF;
 		--rx-surface: #1E1E21;
 		--rx-muted: #9A9AA3;
-		--rx-chrome: #2A2A2E;
-		--rx-on-chrome: #D0D0D6;
+		--rx-chrome: #282C35;
+		--rx-on-chrome: #D3D8E2;
+		--rx-hover-on-chrome: rgba(255, 255, 255, 0.08);
 	}
 }
 
@@ -36,13 +37,13 @@ body {
 
 :root {
 	--rx-raised: #FFFFFF;
-	--rx-line: #E3E9EE;
+	--rx-line: #E2E6EE;
 	--rx-field: #FFFFFF;
-	--rx-accent: #1A5FB4;
+	--rx-accent: #1D5AD6;
 	--rx-on-accent: #FFFFFF;
 	--rx-alert: #E01B24;
 	--rx-backdrop: rgba(0, 0, 0, 0.32);
-	--rx-shadow: rgba(18, 34, 46, 0.24);
+	--rx-shadow: rgba(26, 33, 51, 0.24);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -50,7 +51,7 @@ body {
 		--rx-raised: #2E2E32;
 		--rx-line: #3D3D42;
 		--rx-field: #242428;
-		--rx-accent: #78AEED;
+		--rx-accent: #8DB4F0;
 		--rx-on-accent: #0B1622;
 		--rx-backdrop: rgba(0, 0, 0, 0.5);
 		--rx-shadow: rgba(0, 0, 0, 0.55);
@@ -63,7 +64,7 @@ html.overlay, html.overlay body {
 
 /*
  * Workspace hues, from the Adwaita palette. The glyph takes the darker shade (5) on a light surface and the
- * lighter one (3) on a dark surface. Neither shade over a tint of it reads against the title bar's blue, and a
+ * lighter one (3) on a dark surface. Neither shade over a tint of it reads against the title bar, and a
  * native menu's surface follows neither theme, so both fill a tile with the darker shade under a white glyph.
  */
 :root {

@@ -123,9 +123,9 @@
 	}
 
 	.add.no-service-yet .add-icon {
-		background-color: var(--rx-on-chrome);
+		background-color: var(--rx-accent);
 		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-		color: var(--rx-chrome);
+		color: var(--rx-on-accent);
 	}
 
 	.add.no-service-yet .add-icon::after {
@@ -137,20 +137,20 @@
 	}
 
 	@keyframes call {
-		from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rx-on-chrome) 55%, transparent); }
+		from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rx-accent) 55%, transparent); }
 		to { box-shadow: 0 0 0 10px transparent; }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.add.no-service-yet .add-icon::after {
 			animation: none;
-			box-shadow: 0 0 0 4px color-mix(in srgb, var(--rx-on-chrome) 30%, transparent);
+			box-shadow: 0 0 0 4px color-mix(in srgb, var(--rx-accent) 30%, transparent);
 		}
 	}
 
 	.service.active {
 		background-color: var(--rx-hover-on-chrome);
-		box-shadow: inset 3px 0 0 0 var(--rx-on-chrome);
+		box-shadow: inset 3px 0 0 0 var(--rx-accent);
 	}
 
 	.service.dragged {
@@ -226,9 +226,8 @@
 		background-color: var(--rx-hover-on-chrome);
 	}
 
-	/* Adwaita yellow 2 */
 	.tool.on {
-		color: #F8E45C;
+		color: var(--rx-hue-yellow);
 	}
 
 	.badge.dot {
