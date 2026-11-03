@@ -57,7 +57,7 @@ Tesselium is not code-signed, so the first launch is held back once.
 
 - **From Shep or Tessely:** Tesselium is the same app under a new name. The first start moves the earlier folder over, with every service, workspace and sign-in in it, and on Windows, or from the deb, installing Tesselium replaces the earlier app. On a Mac or with the AppImage, remove it once Tesselium has started.
 - **From 1.5.1 or earlier:** sign-ins now belong to workspaces, and the first start carries them over. A service that had a sign-in of its own may ask you to sign in again.
-- **From 0.10 or earlier:** Shep 1.0 starts from a clean profile, so services have to be added again.
+- **From 0.10 or earlier:** 1.0 starts from a clean profile, so services have to be added again.
 
 ## Keyboard
 
@@ -116,7 +116,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) before sending a change.
 
 ## Credits
 
-Tesselium, called Shep until 1.6.4 and Tessely in 1.7, began as a fork of [Rambox Community Edition](https://github.com/ramboxapp/community-edition), archived in 2022, and Shep 1.0 is a rewrite that keeps none of its code. The idea that every service should work the same way comes from [ElectronIM](https://github.com/manusa/electronim). The workspace icons are from [Lucide](https://lucide.dev).
+Tesselium began as a fork of [Rambox Community Edition](https://github.com/ramboxapp/community-edition), archived in 2022, and 1.0 is a rewrite that keeps none of its code. The idea that every service should work the same way comes from [ElectronIM](https://github.com/manusa/electronim). The workspace icons are from [Lucide](https://lucide.dev).
 
 Tesselium is not affiliated with any of the services it opens.
 
