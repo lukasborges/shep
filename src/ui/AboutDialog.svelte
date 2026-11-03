@@ -5,12 +5,12 @@
 	const { messages, onclose }: { messages: Messages; onclose: () => void } = $props();
 
 	let about = $state<{ version: string; electron: string; chrome: string; homepage: string } | null>(null);
-	$effect(() => { window.tessely.invoke('app:about').then(value => { about = value as typeof about; }); });
+	$effect(() => { window.tesselium.invoke('app:about').then(value => { about = value as typeof about; }); });
 </script>
 
-<div class="dialog about" role="dialog" aria-label="Tessely">
+<div class="dialog about" role="dialog" aria-label="Tesselium">
 	<img src={logo} alt="" width="96" height="96" />
-	<h2>Tessely</h2>
+	<h2>Tesselium</h2>
 	<p>{messages['about.body']}</p>
 	{#if about}
 		<p class="versions">{messages['about.version']} {about.version} · Electron {about.electron} · Chromium {about.chrome}</p>

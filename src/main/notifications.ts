@@ -4,15 +4,15 @@
 // nothing shows. Electron never shows what a service worker shows, and Google
 // Chat sends its messages that way, so those become page notifications.
 export const NOTIFICATION_WRAPPER = `(() => {
-	if ( window.__tesselyNotifications || !window.tesselyService ) return;
-	window.__tesselyNotifications = true;
+	if ( window.__tesseliumNotifications || !window.tesseliumService ) return;
+	window.__tesseliumNotifications = true;
 	const Native = window.Notification;
 	const inert = () => Object.assign(new EventTarget(), { close() {}, onclick: null, onclose: null, onerror: null, onshow: null });
 	function Wrapped(title, options) {
-		window.tesselyService.notified();
-		if ( !window.tesselyService.mayNotify() ) return inert();
+		window.tesseliumService.notified();
+		if ( !window.tesseliumService.mayNotify() ) return inert();
 		const notification = new Native(title, options);
-		notification.addEventListener('click', () => window.tesselyService.notificationClicked());
+		notification.addEventListener('click', () => window.tesseliumService.notificationClicked());
 		return notification;
 	}
 	Wrapped.prototype = Native.prototype;

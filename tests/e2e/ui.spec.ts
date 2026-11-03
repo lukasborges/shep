@@ -2,19 +2,19 @@ import type { Server } from 'node:http';
 import { test, expect } from '@playwright/test';
 import type { ServiceState } from '../../src/shared/service.ts';
 import { TITLE_BAR_HEIGHT } from '../../src/shared/chrome.ts';
-import { launchTessely, closeTessely, inService, inViewOverServices, viewOverServicesShown, serviceRecord, type Tessely } from './helpers/launch.ts';
+import { launchTesselium, closeTesselium, inService, inViewOverServices, viewOverServicesShown, serviceRecord, type Tesselium } from './helpers/launch.ts';
 import { serveFixtures } from './helpers/server.ts';
 
-let tessely: Tessely;
+let tesselium: Tesselium;
 let server: Server;
 let at: Awaited<ReturnType<typeof serveFixtures>>['at'];
 
-const list = () => tessely.window.evaluate(() => window.tessely.invoke('services:list')) as Promise<ServiceState[]>;
+const list = () => tesselium.window.evaluate(() => window.tesselium.invoke('services:list')) as Promise<ServiceState[]>;
 const byId = async (id: string) => (await list()).find(service => service.id === id);
-const inOverlay = <T>(expression: string) => inViewOverServices<T>(tessely, '#overlay', expression);
-const inFindBar = <T>(expression: string) => inViewOverServices<T>(tessely, '#find', expression);
-const overlayShown = () => viewOverServicesShown(tessely, '#overlay');
-const findBarShown = () => viewOverServicesShown(tessely, '#find');
+const inOverlay = <T>(expression: string) => inViewOverServices<T>(tesselium, '#overlay', expression);
+const inFindBar = <T>(expression: string) => inViewOverServices<T>(tesselium, '#find', expression);
+const overlayShown = () => viewOverServicesShown(tesselium, '#overlay');
+const findBarShown = () => viewOverServicesShown(tesselium, '#find');
 const scriptTypingInto = (selector: string, value: string) => `(() => {
 	const field = document.querySelector(${JSON.stringify(selector)});
 	field.value = ${JSON.stringify(value)};
@@ -26,13 +26,13 @@ const findBarText = (selector: string) => () => inFindBar<string | null>(`docume
 const findBarButtonDisabled = (label: string) => () => inFindBar<boolean>(`document.querySelector('button[aria-label="${label}"]').disabled`);
 const pressEscapeInFindBar = () => inFindBar('window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))');
 const openFindBar = async () => {
-	await tessely.window.locator('.titlebar button[aria-label="Find in page"]').click();
+	await tesselium.window.locator('.titlebar button[aria-label="Find in page"]').click();
 	await expect.poll(findBarShown).toBe(true);
 };
 
 test.beforeAll(async () => {
 	({ server, at } = await serveFixtures());
-	tessely = await launchTessely({
+	tesselium = await launchTesselium({
 		store: {
 			services: [serviceRecord('1', at('127.0.0.1', '/service.html'), { name: 'First' }), serviceRecord('2', at('127.0.0.1', '/long.html'), { name: 'Second' })],
 			activeServiceId: '1'
@@ -42,57 +42,57 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-	await closeTessely(tessely);
+	await closeTesselium(tesselium);
 	server.close();
 });
 
 test('draws the unread count as a badge on the icon, capped at 99+, and a dot for something uncounted', async () => {
-	const badge = (name: string) => tessely.window.locator(`.rail .service[aria-label="${name}"] .badge`);
+	const badge = (name: string) => tesselium.window.locator(`.rail .service[aria-label="${name}"] .badge`);
 	await expect(badge('Second')).toHaveText('99+');
-	await inService(tessely, at('127.0.0.1', '/service.html'), 'document.title = "(•) Fixture service"');
+	await inService(tesselium, at('127.0.0.1', '/service.html'), 'document.title = "(•) Fixture service"');
 	await expect(badge('First')).toHaveClass(/dot/);
-	await inService(tessely, at('127.0.0.1', '/service.html'), 'document.title = "(3) Fixture service"');
+	await inService(tesselium, at('127.0.0.1', '/service.html'), 'document.title = "(3) Fixture service"');
 	await expect(badge('First')).toHaveText('3');
-	await inService(tessely, at('127.0.0.1', '/service.html'), 'document.title = "Fixture service"');
+	await inService(tesselium, at('127.0.0.1', '/service.html'), 'document.title = "Fixture service"');
 	await expect(badge('First')).toHaveCount(0, { timeout: 5000 });
 });
 
 test('puts the active page\'s title and its service\'s name in the window\'s title, and its history in the buttons', async () => {
-	await expect(tessely.window).toHaveTitle('Fixture service - First');
-	await expect(tessely.window.locator('.titlebar button[aria-label="Back"]')).toBeDisabled();
-	await inService(tessely, at('127.0.0.1', '/service.html'), `location.href = ${JSON.stringify(at('127.0.0.1', '/away.html?from=title-bar'))}`, { userGesture: true });
-	await expect(tessely.window).toHaveTitle('Somewhere else - First');
-	await expect(tessely.window.locator('.titlebar button[aria-label="Back"]')).toBeEnabled();
-	await tessely.window.locator('.titlebar button[aria-label="Back"]').click();
-	await expect(tessely.window).toHaveTitle('Fixture service - First');
+	await expect(tesselium.window).toHaveTitle('Fixture service - First');
+	await expect(tesselium.window.locator('.titlebar button[aria-label="Back"]')).toBeDisabled();
+	await inService(tesselium, at('127.0.0.1', '/service.html'), `location.href = ${JSON.stringify(at('127.0.0.1', '/away.html?from=title-bar'))}`, { userGesture: true });
+	await expect(tesselium.window).toHaveTitle('Somewhere else - First');
+	await expect(tesselium.window.locator('.titlebar button[aria-label="Back"]')).toBeEnabled();
+	await tesselium.window.locator('.titlebar button[aria-label="Back"]').click();
+	await expect(tesselium.window).toHaveTitle('Fixture service - First');
 });
 
 test('follows a title the page changes on its own, with no navigation and no change to its unread count', async () => {
-	await inService(tessely, at('127.0.0.1', '/service.html'), 'document.title = "Renamed by the page"');
-	await expect(tessely.window).toHaveTitle('Renamed by the page - First');
-	await inService(tessely, at('127.0.0.1', '/service.html'), 'document.title = "Fixture service"');
-	await expect(tessely.window).toHaveTitle('Fixture service - First');
+	await inService(tesselium, at('127.0.0.1', '/service.html'), 'document.title = "Renamed by the page"');
+	await expect(tesselium.window).toHaveTitle('Renamed by the page - First');
+	await inService(tesselium, at('127.0.0.1', '/service.html'), 'document.title = "Fixture service"');
+	await expect(tesselium.window).toHaveTitle('Fixture service - First');
 });
 
 test('shows where a link under the pointer leads in the title bar, and nothing once it leaves', async () => {
-	const pointAt = (url: string) => tessely.app.evaluate(({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0]?.webContents.send('services:hover', '1', url), url);
+	const pointAt = (url: string) => tesselium.app.evaluate(({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0]?.webContents.send('services:hover', '1', url), url);
 	await pointAt('https://example.com/somewhere');
-	await expect(tessely.window.locator('.titlebar .link-under-pointer')).toHaveText('https://example.com/somewhere');
+	await expect(tesselium.window.locator('.titlebar .link-under-pointer')).toHaveText('https://example.com/somewhere');
 	await pointAt('');
-	await expect(tessely.window.locator('.titlebar .link-under-pointer')).toHaveText('');
+	await expect(tesselium.window.locator('.titlebar .link-under-pointer')).toHaveText('');
 });
 
 test('goes home to the address the service was added with', async () => {
-	await inService(tessely, at('127.0.0.1', '/service.html'), `location.href = ${JSON.stringify(at('127.0.0.1', '/away.html?from=home'))}`);
-	await expect(tessely.window).toHaveTitle('Somewhere else - First');
-	await tessely.window.locator('.titlebar button[aria-label="Home"]').click();
-	await expect(tessely.window).toHaveTitle('Fixture service - First');
+	await inService(tesselium, at('127.0.0.1', '/service.html'), `location.href = ${JSON.stringify(at('127.0.0.1', '/away.html?from=home'))}`);
+	await expect(tesselium.window).toHaveTitle('Somewhere else - First');
+	await tesselium.window.locator('.titlebar button[aria-label="Home"]').click();
+	await expect(tesselium.window).toHaveTitle('Fixture service - First');
 	expect((await byId('1'))?.pageTitle).toBe('Fixture service');
 });
 
 test('finds text in the active page and counts the matches, and Escape closes the find bar', async () => {
-	await tessely.window.locator('.rail .service[aria-label="Second"]').click();
-	await expect(tessely.window).toHaveTitle('Long page - Second');
+	await tesselium.window.locator('.rail .service[aria-label="Second"]').click();
+	await expect(tesselium.window).toHaveTitle('Long page - Second');
 	await openFindBar();
 	await findInPage('sheepdog');
 	await expect.poll(findBarText('.matches')).toBe('1/3');
@@ -102,7 +102,7 @@ test('finds text in the active page and counts the matches, and Escape closes th
 
 test('drops the find bar under the title bar at the right, only as big as its panel, so the rest of the page can still be clicked', async () => {
 	await openFindBar();
-	const { findBar, content } = await tessely.app.evaluate(({ BrowserWindow }) => {
+	const { findBar, content } = await tesselium.app.evaluate(({ BrowserWindow }) => {
 		const window = BrowserWindow.getAllWindows()[0]!;
 		const view = window.contentView.children.find(child => (child as unknown as { webContents: Electron.WebContents }).webContents.getURL().endsWith('#find'))!;
 		const [width, height] = window.getContentSize();
@@ -117,9 +117,9 @@ test('drops the find bar under the title bar at the right, only as big as its pa
 
 test('closes the find bar when another service comes to the front', async () => {
 	await openFindBar();
-	await tessely.window.locator('.rail .service[aria-label="First"]').click();
+	await tesselium.window.locator('.rail .service[aria-label="First"]').click();
 	await expect.poll(findBarShown).toBe(false);
-	await tessely.window.locator('.rail .service[aria-label="Second"]').click();
+	await tesselium.window.locator('.rail .service[aria-label="Second"]').click();
 });
 
 test('marks the find bar and turns the arrows off when nothing matches or nothing is typed, saying so to a screen reader', async () => {
@@ -140,18 +140,18 @@ test('marks the find bar and turns the arrows off when nothing matches or nothin
 });
 
 test('adds a service from the address typed behind the +, naming it after the site', async () => {
-	await tessely.window.locator('.rail .add').click();
+	await tesselium.window.locator('.rail .add').click();
 	await expect.poll(overlayShown).toBe(true);
 	await typeInto('input[name="address"]', at('localhost', '/away.html').replace('http://', ''));
 	await inOverlay('document.querySelector("form").requestSubmit()');
 	await expect.poll(overlayShown).toBe(false);
 	const added = (await list()).at(-1);
 	expect(added).toMatchObject({ name: 'Localhost', active: true });
-	await expect(tessely.window.locator('.rail .service[aria-label="Localhost"]')).toHaveAttribute('aria-current', 'page');
+	await expect(tesselium.window.locator('.rail .service[aria-label="Localhost"]')).toHaveAttribute('aria-current', 'page');
 });
 
 test('fills in the name and the address from the list behind the +, filtered by what is typed', async () => {
-	await tessely.window.locator('.rail .add').click();
+	await tesselium.window.locator('.rail .add').click();
 	await expect.poll(overlayShown).toBe(true);
 	expect(await inOverlay<number>('document.querySelectorAll(".catalogue .entry").length')).toBeGreaterThan(40);
 	await typeInto('input[name="address"]', 'slack');
@@ -161,7 +161,7 @@ test('fills in the name and the address from the list behind the +, filtered by 
 		.toEqual(['https://app.slack.com/client', 'Slack']);
 	await typeInto('input[name="address"]', 'intranet.example.com');
 	await expect.poll(() => inOverlay<number>('document.querySelectorAll(".catalogue").length')).toBe(0);
-	await tessely.app.evaluate(({ webContents }) => {
+	await tesselium.app.evaluate(({ webContents }) => {
 		const overlay = webContents.getAllWebContents().find(contents => contents.getURL().endsWith('#overlay'));
 		overlay?.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
 	});
@@ -169,12 +169,12 @@ test('fills in the name and the address from the list behind the +, filtered by 
 });
 
 test('refuses an address that is not a web address, and keeps the dialog open', async () => {
-	await tessely.window.locator('.rail .add').click();
+	await tesselium.window.locator('.rail .add').click();
 	await expect.poll(overlayShown).toBe(true);
 	await typeInto('input[name="address"]', 'intranet');
 	await inOverlay('document.querySelector("form").requestSubmit()');
 	await expect.poll(() => inOverlay<string>('document.querySelector("[role=alert]")?.textContent ?? ""')).toContain('Type the address');
-	await tessely.app.evaluate(({ webContents }) => {
+	await tesselium.app.evaluate(({ webContents }) => {
 		const overlay = webContents.getAllWebContents().find(contents => contents.getURL().endsWith('#overlay'));
 		overlay?.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
 	});
@@ -182,7 +182,7 @@ test('refuses an address that is not a web address, and keeps the dialog open', 
 });
 
 test('edits a service\'s name in the dialog its menu opens, with the address already filled in', async () => {
-	await tessely.window.evaluate(() => window.tessely.invoke('overlay:open', { dialog: 'edit', serviceId: '1' }));
+	await tesselium.window.evaluate(() => window.tesselium.invoke('overlay:open', { dialog: 'edit', serviceId: '1' }));
 	await expect.poll(() => inOverlay<string>('document.querySelector("input[name=address]").value')).toBe(at('127.0.0.1', '/service.html'));
 	await typeInto('input[name="name"]', 'Renamed');
 	await inOverlay('document.querySelector("form").requestSubmit()');
@@ -191,11 +191,11 @@ test('edits a service\'s name in the dialog its menu opens, with the address alr
 
 test('keeps the order the rail was dragged into', async () => {
 	const ids = (await list()).map(service => service.id);
-	await tessely.window.evaluate(order => window.tessely.invoke('services:reorder', order), [...ids].reverse());
+	await tesselium.window.evaluate(order => window.tesselium.invoke('services:reorder', order), [...ids].reverse());
 	await expect.poll(async () => (await list()).map(service => service.id)).toEqual([...ids].reverse());
-	const saved = await tessely.app.evaluate(({ app }) => {
+	const saved = await tesselium.app.evaluate(({ app }) => {
 		const fs = process.getBuiltinModule('node:fs');
-		return fs.readFileSync(app.getPath('userData') + '/tessely.json', 'utf8');
+		return fs.readFileSync(app.getPath('userData') + '/tesselium.json', 'utf8');
 	});
 	expect((JSON.parse(saved) as { services: { id: string }[] }).services.map(service => service.id)).toEqual([...ids].reverse());
 });
@@ -203,19 +203,19 @@ test('keeps the order the rail was dragged into', async () => {
 test('reorders the rail by dragging an icon onto another', async () => {
 	const before = (await list()).map(service => service.name);
 	const [first = '', second = ''] = before;
-	await tessely.window.locator(`.rail .service[aria-label="${first}"]`).dragTo(tessely.window.locator(`.rail .service[aria-label="${second}"]`));
+	await tesselium.window.locator(`.rail .service[aria-label="${first}"]`).dragTo(tesselium.window.locator(`.rail .service[aria-label="${second}"]`));
 	await expect.poll(async () => (await list()).map(service => service.name).slice(0, 2)).toEqual([second, first]);
 });
 
 test('shows the app\'s state changes without an exception on the bridge', async () => {
-	const session = await tessely.window.context().newCDPSession(tessely.window);
+	const session = await tesselium.window.context().newCDPSession(tesselium.window);
 	const thrown: string[] = [];
 	session.on('Runtime.exceptionThrown', event => thrown.push(event.exceptionDetails.text));
 	await session.send('Runtime.enable');
-	await tessely.window.evaluate(() => window.tessely.invoke('app:setDontDisturb', true));
-	await expect(tessely.window.locator('.tool.on')).toBeVisible();
-	await tessely.window.evaluate(() => window.tessely.invoke('app:setDontDisturb', false));
-	await expect(tessely.window.locator('.tool.on')).toHaveCount(0);
+	await tesselium.window.evaluate(() => window.tesselium.invoke('app:setDontDisturb', true));
+	await expect(tesselium.window.locator('.tool.on')).toBeVisible();
+	await tesselium.window.evaluate(() => window.tesselium.invoke('app:setDontDisturb', false));
+	await expect(tesselium.window.locator('.tool.on')).toHaveCount(0);
 	expect(thrown).toEqual([]);
 	await session.detach();
 });

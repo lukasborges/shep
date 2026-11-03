@@ -6,7 +6,7 @@
 	import Welcome from './Welcome.svelte';
 	import Migrating from './Migrating.svelte';
 
-	const messages = $derived(messagesFor(appState.language || window.tessely.locale));
+	const messages = $derived(messagesFor(appState.language || window.tesselium.locale));
 	loadServices();
 </script>
 

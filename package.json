@@ -1,19 +1,19 @@
 {
-	"name": "Tessely",
-	"productName": "Tessely",
+	"name": "Tesselium",
+	"productName": "Tesselium",
 	"version": "1.7.1",
 	"description": "One window for the web apps you already use in the browser.",
 	"main": "out/main/index.js",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/lukasborges/tessely.git"
+		"url": "https://github.com/lukasborges/tesselium.git"
 	},
 	"bugs": {
-		"url": "https://github.com/lukasborges/tessely/issues"
+		"url": "https://github.com/lukasborges/tesselium/issues"
 	},
-	"homepage": "https://github.com/lukasborges/tessely",
+	"homepage": "https://github.com/lukasborges/tesselium",
 	"keywords": [
-		"Tessely",
+		"Tesselium",
 		"GNOME",
 		"web apps",
 		"messaging",
@@ -38,7 +38,7 @@
 		"clean": "node -e \"for ( const directory of ['dist', 'out'] ) require('fs').rmSync(directory, { recursive: true, force: true })\""
 	},
 	"build": {
-		"productName": "Tessely",
+		"productName": "Tesselium",
 		"appId": "io.github.lukasborges.shep",
 		"asar": true,
 		"electronVersion": "44.10.0",
@@ -53,10 +53,10 @@
 					"Terminal": "false",
 					"Type": "Application",
 					"Categories": "GTK;GNOME;Network;Email;Chat;InstantMessaging;",
-					"StartupWMClass": "tessely"
+					"StartupWMClass": "tesselium"
 				}
 			},
-			"artifactName": "Tessely-${version}-linux-${arch}.${ext}",
+			"artifactName": "Tesselium-${version}-linux-${arch}.${ext}",
 			"executableArgs": [
 				"--no-sandbox"
 			],
@@ -84,12 +84,14 @@
 		"deb": {
 			"fpm": [
 				"--replaces=shep",
-				"--conflicts=shep"
+				"--conflicts=shep",
+				"--replaces=tessely",
+				"--conflicts=tessely"
 			]
 		},
 		"win": {
 			"icon": "resources/installer/icon.ico",
-			"artifactName": "Tessely-${version}-windows-${arch}.${ext}",
+			"artifactName": "Tesselium-${version}-windows-${arch}.${ext}",
 			"verifyUpdateCodeSignature": false,
 			"target": [
 				{
@@ -109,7 +111,7 @@
 		"mac": {
 			"icon": "resources/logo/1024x1024.png",
 			"category": "public.app-category.social-networking",
-			"artifactName": "Tessely-${version}-mac-${arch}.${ext}",
+			"artifactName": "Tesselium-${version}-mac-${arch}.${ext}",
 			"identity": "-",
 			"extendInfo": {
 				"NSCameraUsageDescription": "A service you add may ask for the camera, for a call.",
@@ -136,8 +138,8 @@
 			"oneClick": false,
 			"perMachine": false,
 			"allowToChangeInstallationDirectory": true,
-			"shortcutName": "Tessely",
-			"artifactName": "Tessely-${version}-windows-${arch}-setup.${ext}"
+			"shortcutName": "Tesselium",
+			"artifactName": "Tesselium-${version}-windows-${arch}-setup.${ext}"
 		},
 		"directories": {
 			"buildResources": "resources/installer/",
@@ -147,7 +149,7 @@
 			{
 				"provider": "github",
 				"owner": "lukasborges",
-				"repo": "tessely",
+				"repo": "tesselium",
 				"vPrefixedTagName": false,
 				"releaseType": "draft"
 			}

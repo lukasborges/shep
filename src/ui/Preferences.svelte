@@ -29,19 +29,19 @@
 	let hasLockPassword = $state(false);
 
 	$effect(() => {
-		window.tessely.invoke('preferences:get').then(value => { prefs = value as Preferences; });
-		window.tessely.invoke('services:list').then(value => { services = value as ServiceState[]; });
-		window.tessely.invoke('spellcheck:languages').then(value => { dictionaries = value as typeof dictionaries; });
-		window.tessely.invoke('lock:hasPassword').then(value => { hasLockPassword = value === true; });
+		window.tesselium.invoke('preferences:get').then(value => { prefs = value as Preferences; });
+		window.tesselium.invoke('services:list').then(value => { services = value as ServiceState[]; });
+		window.tesselium.invoke('spellcheck:languages').then(value => { dictionaries = value as typeof dictionaries; });
+		window.tesselium.invoke('lock:hasPassword').then(value => { hasLockPassword = value === true; });
 	});
 
 	async function set<K extends keyof Preferences>(key: K, value: Preferences[K]) {
 		if ( !prefs ) return;
 		prefs[key] = value;
-		if ( await window.tessely.invoke('preferences:set', key, value) ) needsRelaunch = true;
+		if ( await window.tesselium.invoke('preferences:set', key, value) ) needsRelaunch = true;
 	}
 
-	const act = (action: AppAction) => window.tessely.invoke('app:action', action);
+	const act = (action: AppAction) => window.tesselium.invoke('app:action', action);
 
 	const displayNames = $derived(new Intl.DisplayNames([locale], { type: 'language', languageDisplay: 'standard' }));
 	function dictionaryName(language: string): string {

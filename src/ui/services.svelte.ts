@@ -25,36 +25,36 @@ function sendWorkspaceImages(): void {
 	imagesDrawnFor = drawnFor;
 	const workspaces = JSON.parse(JSON.stringify(appState.workspaces));
 	imagesSent = imagesSent
-		.then(async () => { await window.tessely.invoke('workspaces:images', await workspaceImages(workspaces)); })
+		.then(async () => { await window.tesselium.invoke('workspaces:images', await workspaceImages(workspaces)); })
 		.catch(() => {});
 }
 
 export async function loadServices(): Promise<void> {
-	Object.assign(appState, await window.tessely.invoke('app:state') as AppState);
-	window.tessely.on('app:state', state => {
+	Object.assign(appState, await window.tesselium.invoke('app:state') as AppState);
+	window.tesselium.on('app:state', state => {
 		Object.assign(appState, state as AppState);
 		sendWorkspaceImages();
 	});
 	sendWorkspaceImages();
-	services.list = await window.tessely.invoke('services:list') as ServiceState[];
-	window.tessely.on('services:changed', list => { services.list = list as ServiceState[]; });
-	window.tessely.on('services:hover', (id, url) => { if ( id === activeService()?.id ) services.hover = String(url ?? ''); });
+	services.list = await window.tesselium.invoke('services:list') as ServiceState[];
+	window.tesselium.on('services:changed', list => { services.list = list as ServiceState[]; });
+	window.tesselium.on('services:hover', (id, url) => { if ( id === activeService()?.id ) services.hover = String(url ?? ''); });
 }
 
-export const activate = (id: string) => window.tessely.invoke('services:activate', id);
-export const showServiceMenu = (id: string) => window.tessely.invoke('services:menu', id);
-export const reorder = (ids: string[]) => window.tessely.invoke('services:reorder', ids);
-export const openAddDialog = () => window.tessely.invoke('overlay:open', { dialog: 'add' });
-export const navigate = (id: string, where: Navigation) => window.tessely.invoke('service:navigate', id, where);
-export const resetZoom = (id: string) => window.tessely.invoke('service:resetZoom', id);
-export const openFind = () => window.tessely.invoke('find:open');
-export const setDontDisturb = (on: boolean) => window.tessely.invoke('app:setDontDisturb', on);
-export const chooseWorkspace = (id: ActiveWorkspace) => window.tessely.invoke('workspaces:choose', id);
-export const showWorkspaceTabMenu = (id: ActiveWorkspace) => window.tessely.invoke('workspaces:tabMenu', id);
-export const showHiddenWorkspaces = (ids: string[], x: number, y: number) => window.tessely.invoke('workspaces:hiddenMenu', ids, x, y);
-export const saveWorkspaceOrder = (ids: string[]) => window.tessely.invoke('workspaces:reorder', ids);
-export const renameWorkspace = (id: string, name: string) => window.tessely.invoke('workspaces:save', id, name);
-export const moveServiceToWorkspace = (id: string, workspace: string) => window.tessely.invoke('services:moveToWorkspace', id, workspace);
-export const openNewWorkspaceDialog =() => window.tessely.invoke('overlay:open', { dialog: 'workspace', workspaceId: null });
-export const openPreferences = () => window.tessely.invoke('overlay:open', { dialog: 'preferences' });
-export const lockApp = () => window.tessely.invoke('app:lock');
+export const activate = (id: string) => window.tesselium.invoke('services:activate', id);
+export const showServiceMenu = (id: string) => window.tesselium.invoke('services:menu', id);
+export const reorder = (ids: string[]) => window.tesselium.invoke('services:reorder', ids);
+export const openAddDialog = () => window.tesselium.invoke('overlay:open', { dialog: 'add' });
+export const navigate = (id: string, where: Navigation) => window.tesselium.invoke('service:navigate', id, where);
+export const resetZoom = (id: string) => window.tesselium.invoke('service:resetZoom', id);
+export const openFind = () => window.tesselium.invoke('find:open');
+export const setDontDisturb = (on: boolean) => window.tesselium.invoke('app:setDontDisturb', on);
+export const chooseWorkspace = (id: ActiveWorkspace) => window.tesselium.invoke('workspaces:choose', id);
+export const showWorkspaceTabMenu = (id: ActiveWorkspace) => window.tesselium.invoke('workspaces:tabMenu', id);
+export const showHiddenWorkspaces = (ids: string[], x: number, y: number) => window.tesselium.invoke('workspaces:hiddenMenu', ids, x, y);
+export const saveWorkspaceOrder = (ids: string[]) => window.tesselium.invoke('workspaces:reorder', ids);
+export const renameWorkspace = (id: string, name: string) => window.tesselium.invoke('workspaces:save', id, name);
+export const moveServiceToWorkspace = (id: string, workspace: string) => window.tesselium.invoke('services:moveToWorkspace', id, workspace);
+export const openNewWorkspaceDialog =() => window.tesselium.invoke('overlay:open', { dialog: 'workspace', workspaceId: null });
+export const openPreferences = () => window.tesselium.invoke('overlay:open', { dialog: 'preferences' });
+export const lockApp = () => window.tesselium.invoke('app:lock');

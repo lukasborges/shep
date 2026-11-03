@@ -30,7 +30,7 @@
 	$effect(() => {
 		if ( !isAdding ) return;
 		for ( const { url } of CATALOGUE ) {
-			window.tessely.invoke('catalogue:icon', url).then(icon => { if ( typeof icon === 'string' ) icons[url] = icon; });
+			window.tesselium.invoke('catalogue:icon', url).then(icon => { if ( typeof icon === 'string' ) icons[url] = icon; });
 		}
 	});
 
@@ -46,13 +46,13 @@
 
 	$effect(() => {
 		addressField?.focus();
-		window.tessely.invoke('app:state').then(current => {
+		window.tesselium.invoke('app:state').then(current => {
 			appNow = current as AppState;
 			if ( !serviceId ) workspace = appNow.activeWorkspace ?? appNow.workspaces[0]?.id ?? '';
 			if ( !appNow.workspaces.length ) firstWorkspaceName = messages['dialog.workspace.first'];
 		});
 		if ( !serviceId ) return;
-		window.tessely.invoke('services:record', serviceId).then(record => {
+		window.tesselium.invoke('services:record', serviceId).then(record => {
 			const service = record as ServiceRecord | null;
 			if ( !service ) return;
 			address = service.url;
@@ -66,8 +66,8 @@
 		event.preventDefault();
 		touched = true;
 		if ( !isValid ) return;
-		if ( serviceId ) await window.tessely.invoke('services:update', serviceId, address, name, workspace);
-		else await window.tessely.invoke('services:add', address, name, workspace, firstWorkspaceName);
+		if ( serviceId ) await window.tesselium.invoke('services:update', serviceId, address, name, workspace);
+		else await window.tesselium.invoke('services:add', address, name, workspace, firstWorkspaceName);
 		onclose();
 	}
 </script>

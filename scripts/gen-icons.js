@@ -94,7 +94,7 @@ function main() {
 	const installer = size => path.join(root, 'resources', 'installer', 'icons', `${size}x${size}.png`);
 	for (const size of INSTALLER) render(MASTER, installer(size), size);
 
-	const ico = fs.mkdtempSync(path.join(os.tmpdir(), 'tessely-ico-'));
+	const ico = fs.mkdtempSync(path.join(os.tmpdir(), 'tesselium-ico-'));
 	const windows = size => path.join(ico, `${size}x${size}.png`);
 	for (const size of ICO) render(MASTER, windows(size), size);
 	pack(path.join(root, 'resources', 'installer', 'icon.ico'), ICO, windows);

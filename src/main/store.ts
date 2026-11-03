@@ -21,9 +21,9 @@ interface Schema {
 	sessionsLeftBehind: string[];
 }
 
-// tessely.json, not config.json: the Ext app's config.json may still sit in the same folder, with another shape.
+// tesselium.json, not config.json: the Ext app's config.json may still sit in the same folder, with another shape.
 export const store = new Store<Schema>({
-	name: 'tessely',
+	name: 'tesselium',
 	defaults: {
 		services: [], activeServiceId: null, permissions: {}, dontDisturb: false, workspaces: [], activeWorkspace: null,
 		preferences: DEFAULT_PREFERENCES, lockPasswordHash: '', locked: false, windowBounds: null, sessionsLeftBehind: []

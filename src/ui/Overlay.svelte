@@ -23,16 +23,16 @@
 	// neither is dismissed by Escape or a click beside it: the lock has to be unlocked, and the picker answered
 	const isDismissible = (dialog: Shown) => dialog.dialog !== 'lock' && dialog.dialog !== 'screenPicker';
 
-	let language = $state(window.tessely.locale);
+	let language = $state(window.tesselium.locale);
 	const messages = $derived(messagesFor(language));
 	let shown = $state<Shown | null>(null);
 	// a dialog opened from Preferences goes back to it
 	let returnTo = $state<Shown | null>(null);
 	let opening = $state(0);
 
-	window.tessely.invoke('app:state').then(state => { language = (state as AppState).language; });
-	window.tessely.on('app:state', state => { language = (state as AppState).language; });
-	window.tessely.on('overlay:show', dialog => {
+	window.tesselium.invoke('app:state').then(state => { language = (state as AppState).language; });
+	window.tesselium.on('app:state', state => { language = (state as AppState).language; });
+	window.tesselium.on('overlay:show', dialog => {
 		shown = dialog as Shown;
 		returnTo = null;
 		opening++;
@@ -46,7 +46,7 @@
 			return;
 		}
 		shown = null;
-		window.tessely.invoke('overlay:close');
+		window.tesselium.invoke('overlay:close');
 	}
 
 	function openFromPreferences(dialog: 'about' | 'unreadReport' | 'lockPassword') {

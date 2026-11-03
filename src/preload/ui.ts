@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { EVENT_CHANNELS, INVOKE_CHANNELS, type EventChannel, type InvokeChannel } from '../shared/channels.ts';
-import type { TesselyBridge } from './api.ts';
+import type { TesseliumBridge } from './api.ts';
 
 function assertExposed<T extends string>(allowed: readonly T[], channel: string): asserts channel is T {
 	if ( !(allowed as readonly string[]).includes(channel) ) {
@@ -8,7 +8,7 @@ function assertExposed<T extends string>(allowed: readonly T[], channel: string)
 	}
 }
 
-const bridge: TesselyBridge = {
+const bridge: TesseliumBridge = {
 	invoke(channel, ...args) {
 		assertExposed<InvokeChannel>(INVOKE_CHANNELS, channel);
 		return ipcRenderer.invoke(channel, ...args);
@@ -22,4 +22,4 @@ const bridge: TesselyBridge = {
 	locale: navigator.language
 };
 
-contextBridge.exposeInMainWorld('tessely', bridge);
+contextBridge.exposeInMainWorld('tesselium', bridge);

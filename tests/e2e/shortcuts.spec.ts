@@ -1,28 +1,28 @@
 import type { Server } from 'node:http';
 import { test, expect } from '@playwright/test';
 import type { ServiceState } from '../../src/shared/service.ts';
-import { launchTessely, closeTessely, inService, inViewOverServices, viewOverServicesShown, serviceRecord, COMMAND, type Tessely } from './helpers/launch.ts';
+import { launchTesselium, closeTesselium, inService, inViewOverServices, viewOverServicesShown, serviceRecord, COMMAND, type Tesselium } from './helpers/launch.ts';
 import { serveFixtures } from './helpers/server.ts';
 
-let tessely: Tessely;
+let tesselium: Tesselium;
 let server: Server;
 let at: Awaited<ReturnType<typeof serveFixtures>>['at'];
 
 const first = () => at('127.0.0.1', '/service.html');
 const second = () => at('127.0.0.1', '/long.html');
-const list = () => tessely.window.evaluate(() => window.tessely.invoke('services:list')) as Promise<ServiceState[]>;
+const list = () => tesselium.window.evaluate(() => window.tesselium.invoke('services:list')) as Promise<ServiceState[]>;
 const activeName = async () => (await list()).find(service => service.active)?.name;
-const press = (urlPrefix: string, keyCode: string, modifiers: string[]) => tessely.app.evaluate(({ webContents }, { urlPrefix, keyCode, modifiers }) => {
+const press = (urlPrefix: string, keyCode: string, modifiers: string[]) => tesselium.app.evaluate(({ webContents }, { urlPrefix, keyCode, modifiers }) => {
 	const contents = webContents.getAllWebContents().find(candidate => candidate.getURL().startsWith(urlPrefix));
 	contents?.sendInputEvent({ type: 'keyDown', keyCode, modifiers: modifiers as Electron.InputEvent['modifiers'] });
 	contents?.sendInputEvent({ type: 'keyUp', keyCode, modifiers: modifiers as Electron.InputEvent['modifiers'] });
 }, { urlPrefix, keyCode, modifiers });
-const windowFullScreen = () => tessely.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isFullScreen());
-const loaded = (url: string) => tessely.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL() === url && !contents.isLoading()), url);
+const windowFullScreen = () => tesselium.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isFullScreen());
+const loaded = (url: string) => tesselium.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL() === url && !contents.isLoading()), url);
 
 test.beforeAll(async () => {
 	({ server, at } = await serveFixtures());
-	tessely = await launchTessely({
+	tesselium = await launchTesselium({
 		store: {
 			services: [serviceRecord('1', first(), { name: 'First', notifications: true, muted: false }), serviceRecord('2', second(), { name: 'Second', notifications: true, muted: false })],
 			activeServiceId: '1'
@@ -33,7 +33,7 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-	await closeTessely(tessely);
+	await closeTesselium(tesselium);
 	server.close();
 });
 
@@ -53,14 +53,14 @@ test('cycles through the services with Ctrl+Tab and back with Ctrl+Shift+Tab', a
 
 test('opens find in page with Ctrl+F from inside the service', async () => {
 	await press(first(), 'F', [COMMAND]);
-	await expect.poll(() => viewOverServicesShown(tessely, '#find')).toBe(true);
-	await expect.poll(() => inViewOverServices<boolean>(tessely, '#find', 'document.activeElement?.matches(\'input[type="search"]\') ?? false')).toBe(true);
-	await inViewOverServices(tessely, '#find', 'window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))');
-	await expect.poll(() => viewOverServicesShown(tessely, '#find')).toBe(false);
+	await expect.poll(() => viewOverServicesShown(tesselium, '#find')).toBe(true);
+	await expect.poll(() => inViewOverServices<boolean>(tesselium, '#find', 'document.activeElement?.matches(\'input[type="search"]\') ?? false')).toBe(true);
+	await inViewOverServices(tesselium, '#find', 'window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))');
+	await expect.poll(() => viewOverServicesShown(tesselium, '#find')).toBe(false);
 });
 
 test('zooms the active service with Ctrl+= and resets it with Ctrl+0, keeping the level', async () => {
-	const zoom = () => tessely.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().find(contents => contents.getURL() === url)?.getZoomLevel(), first());
+	const zoom = () => tesselium.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().find(contents => contents.getURL() === url)?.getZoomLevel(), first());
 	await press(first(), '=', [COMMAND]);
 	await expect.poll(zoom).toBe(0.25);
 	await press(first(), '0', [COMMAND]);
@@ -77,9 +77,9 @@ test('leaves the full screen F11 entered with Escape as well, whose buttons it h
 
 test('gives a page in its own full screen the whole window, and F11 takes it out of it', async () => {
 	test.skip(process.platform === 'darwin', 'a Mac has no F11');
-	const pageFullScreen = () => tessely.app.evaluate(({ webContents }, url) =>
+	const pageFullScreen = () => tesselium.app.evaluate(({ webContents }, url) =>
 		webContents.getAllWebContents().find(contents => contents.getURL() === url)?.executeJavaScript('!!document.fullscreenElement'), first());
-	const covers = () => tessely.app.evaluate(({ BrowserWindow }, url) => {
+	const covers = () => tesselium.app.evaluate(({ BrowserWindow }, url) => {
 		const [window] = BrowserWindow.getAllWindows();
 		const view = window?.contentView.children.find(child => 'webContents' in child && (child as Electron.WebContentsView).webContents.getURL() === url);
 		const [width = Infinity, height = Infinity] = window?.getContentSize() ?? [];
@@ -88,7 +88,7 @@ test('gives a page in its own full screen the whole window, and F11 takes it out
 		// back, and the size Electron reports catches up only after the last resize has been laid out.
 		return bounds?.x === 0 && bounds.y === 0 && bounds.width >= width && bounds.height >= height;
 	}, first());
-	await tessely.app.evaluate(({ webContents }, url) =>
+	await tesselium.app.evaluate(({ webContents }, url) =>
 		webContents.getAllWebContents().find(contents => contents.getURL() === url)?.executeJavaScript('document.documentElement.requestFullscreen()', true), first());
 	await expect.poll(pageFullScreen).toBe(true);
 	await expect.poll(covers).toBe(true);
@@ -99,7 +99,7 @@ test('gives a page in its own full screen the whole window, and F11 takes it out
 });
 
 test('shows a zoom other than 100% in the title bar, and a click there resets it', async () => {
-	const indicator = tessely.window.locator('.titlebar button[aria-label="Actual Size"]');
+	const indicator = tesselium.window.locator('.titlebar button[aria-label="Actual Size"]');
 	await expect(indicator).toBeHidden();
 	await press(first(), '=', [COMMAND]);
 	await expect(indicator).toHaveText('105%');
@@ -108,23 +108,23 @@ test('shows a zoom other than 100% in the title bar, and a click there resets it
 });
 
 test('lets a service notify, and a click on its notification brings it forward', async () => {
-	expect(await inService<boolean>(tessely, second(), '!!window.__tesselyNotifications && window.tesselyService.mayNotify()')).toBe(true);
-	await inService(tessely, second(), 'window.tesselyService.notificationClicked()');
+	expect(await inService<boolean>(tesselium, second(), '!!window.__tesseliumNotifications && window.tesseliumService.mayNotify()')).toBe(true);
+	await inService(tesselium, second(), 'window.tesseliumService.notificationClicked()');
 	await expect.poll(activeName).toBe('Second');
 });
 
 test('mutes every service and holds back notifications while Don\'t Disturb is on', async () => {
-	const muted = () => tessely.app.evaluate(({ webContents }, urls) =>
+	const muted = () => tesselium.app.evaluate(({ webContents }, urls) =>
 		webContents.getAllWebContents().filter(contents => urls.includes(contents.getURL())).map(contents => contents.isAudioMuted()), [first(), second()]);
-	const bell = tessely.window.locator('.rail .tool[aria-label="Don\'t Disturb"]');
+	const bell = tesselium.window.locator('.rail .tool[aria-label="Don\'t Disturb"]');
 
 	await bell.click();
 	await expect(bell).toHaveAttribute('aria-pressed', 'true');
 	await expect.poll(muted).toEqual([true, true]);
-	expect(await inService<boolean>(tessely, first(), 'window.tesselyService.mayNotify()')).toBe(false);
+	expect(await inService<boolean>(tesselium, first(), 'window.tesseliumService.mayNotify()')).toBe(false);
 
 	await press(first(), 'D', ['alt', 'shift']);
 	await expect(bell).toHaveAttribute('aria-pressed', 'false');
 	await expect.poll(muted).toEqual([false, false]);
-	expect(await inService<boolean>(tessely, first(), 'window.tesselyService.mayNotify()')).toBe(true);
+	expect(await inService<boolean>(tesselium, first(), 'window.tesseliumService.mayNotify()')).toBe(true);
 });

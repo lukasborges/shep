@@ -11,18 +11,18 @@
 
 	$effect(() => {
 		field?.focus();
-		window.tessely.invoke('lock:hasPassword').then(value => { hasOne = value === true; });
+		window.tesselium.invoke('lock:hasPassword').then(value => { hasOne = value === true; });
 	});
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
 		if ( !matches ) return;
-		await window.tessely.invoke('lock:setPassword', password, thenLock);
+		await window.tesselium.invoke('lock:setPassword', password, thenLock);
 		if ( !thenLock ) onclose();
 	}
 
 	async function remove() {
-		await window.tessely.invoke('lock:setPassword', '');
+		await window.tesselium.invoke('lock:setPassword', '');
 		onclose();
 	}
 </script>

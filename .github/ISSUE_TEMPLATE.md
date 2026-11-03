@@ -15,6 +15,6 @@
 
 ### Environment
 
-- Tessely: <!-- Preferences › Advanced › About Tessely -->
+- Tesselium: <!-- Preferences › Advanced › About Tesselium -->
 - Distribution and desktop: <!-- e.g. Fedora 44, GNOME on Wayland -->
 - Installed as: <!-- AppImage, deb, tarball, or from source -->

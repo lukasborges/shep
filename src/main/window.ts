@@ -36,7 +36,7 @@ export function createMainWindow(startHidden: boolean, saved: WindowBounds | nul
 		// Shown from the start, not on ready-to-show: on Wayland a window that was never mapped never paints,
 		// so ready-to-show never came and the app was left in the tray. The background colour keeps it from flashing.
 		show: !startHidden,
-		title: 'Tessely',
+		title: 'Tesselium',
 		titleBarStyle: 'hidden',
 		titleBarOverlay: titleBarOverlay(),
 		// centred in the title bar, whose height the overlay gives a Mac's buttons nowhere else

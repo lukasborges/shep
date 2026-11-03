@@ -14,7 +14,7 @@
 	let middleWidth = $state(0);
 
 	function windowTitle(): string {
-		if ( !service ) return 'Tessely';
+		if ( !service ) return 'Tesselium';
 		const pageTitle = pageTitleBesideName(service.name, service.pageTitle);
 		return pageTitle ? `${pageTitle} - ${service.name}` : service.name;
 	}

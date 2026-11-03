@@ -1,20 +1,20 @@
 import type { Server } from 'node:http';
 import { test, expect } from '@playwright/test';
 import type { ServiceState } from '../../src/shared/service.ts';
-import { launchTessely, closeTessely, inService, serviceRecord, type Tessely } from './helpers/launch.ts';
+import { launchTesselium, closeTesselium, inService, serviceRecord, type Tesselium } from './helpers/launch.ts';
 import { serveFixtures } from './helpers/server.ts';
 
-let tessely: Tessely;
+let tesselium: Tesselium;
 let server: Server;
 let at: Awaited<ReturnType<typeof serveFixtures>>['at'];
 
 const serviceUrl = () => at('127.0.0.1', '/service.html');
-const list = () => tessely.window.evaluate(() => window.tessely.invoke('services:list')) as Promise<ServiceState[]>;
-const inFixture = <T>(expression: string) => inService<T>(tessely, serviceUrl(), expression);
+const list = () => tesselium.window.evaluate(() => window.tesselium.invoke('services:list')) as Promise<ServiceState[]>;
+const inFixture = <T>(expression: string) => inService<T>(tesselium, serviceUrl(), expression);
 
 test.beforeAll(async () => {
 	({ server, at } = await serveFixtures());
-	tessely = await launchTessely({
+	tesselium = await launchTesselium({
 		store: {
 			services: [
 				serviceRecord('1', serviceUrl()),
@@ -28,12 +28,12 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-	await closeTessely(tessely);
+	await closeTesselium(tesselium);
 	server.close();
 });
 
 test('runs a service in its workspace\'s session, kept on disk, so a saved sign-in survives', async () => {
-	const storage = await tessely.app.evaluate(({ webContents }, url) =>
+	const storage = await tesselium.app.evaluate(({ webContents }, url) =>
 		webContents.getAllWebContents().find(contents => contents.getURL() === url)?.session.storagePath, serviceUrl());
 	// the separator is whichever the system writes its paths with
 	expect(storage).toMatch(/[/\\]Partitions[/\\]workspace-w[0-9a-z]+$/);
@@ -43,16 +43,16 @@ test('runs the service page isolated, sandboxed and without node', async () => {
 	expect(await inFixture('({ require: typeof require, process: typeof process })')).toEqual({ require: 'undefined', process: 'undefined' });
 });
 
-test('tells the page it is Chromium, with nothing of Tessely or Electron in the agent', async () => {
+test('tells the page it is Chromium, with nothing of Tesselium or Electron in the agent', async () => {
 	const agent = await inFixture<string>('navigator.userAgent');
 	expect(agent).toContain('Chrome/');
-	expect(agent).not.toMatch(/Tessely|Electron/);
+	expect(agent).not.toMatch(/Tesselium|Electron/);
 });
 
 test('counts unread from the page title and shows the active service instead of the welcome page', async () => {
 	await inFixture('document.title = "(3) Fixture service"');
 	await expect.poll(async () => (await list()).find(service => service.id === '1')?.unread).toBe(3);
-	await expect(tessely.window.locator('.welcome')).toHaveCount(0);
+	await expect(tesselium.window.locator('.welcome')).toHaveCount(0);
 	await inFixture('document.title = "Fixture service"');
 });
 
@@ -80,13 +80,13 @@ test('forgets a page\'s badge once the service loads another page, which sets it
 	await expect.poll(unread).toBe(7);
 	await inFixture('location.reload(), null');
 	await expect.poll(unread).toBe(0);
-	await expect.poll(async () => inFixture<boolean>('!!window.__tesselyNotifications')).toBe(true);
+	await expect.poll(async () => inFixture<boolean>('!!window.__tesseliumNotifications')).toBe(true);
 });
 
 const faviconWidth = async (id: string) => {
 	await expect.poll(async () => (await list()).find(service => service.id === id)?.favicon ?? '').toMatch(/^data:image\/png;base64,/);
-	return tessely.window.evaluate(async id => {
-		const state = (await window.tessely.invoke('services:list') as { id: string; favicon: string }[]).find(service => service.id === id);
+	return tesselium.window.evaluate(async id => {
+		const state = (await window.tesselium.invoke('services:list') as { id: string; favicon: string }[]).find(service => service.id === id);
 		const image = new Image();
 		image.src = state?.favicon ?? '';
 		await image.decode();
@@ -104,17 +104,17 @@ test('wears an icon from the manifest when every favicon the page lists is blurr
 
 test('tells the service page the app\'s theme, which embedded content is not told on its own', async () => {
 	const isDark = () => inFixture<boolean>('matchMedia("(prefers-color-scheme: dark)").matches');
-	await tessely.app.evaluate(({ nativeTheme }) => { nativeTheme.themeSource = 'dark'; });
+	await tesselium.app.evaluate(({ nativeTheme }) => { nativeTheme.themeSource = 'dark'; });
 	await expect.poll(isDark).toBe(true);
-	await tessely.app.evaluate(({ nativeTheme }) => { nativeTheme.themeSource = 'light'; });
+	await tesselium.app.evaluate(({ nativeTheme }) => { nativeTheme.themeSource = 'light'; });
 	await expect.poll(isDark).toBe(false);
 });
 
 test('tells a page the camera is refused only once the user refused it, since a page told so before never asks', async () => {
-	const camera = (url: string) => inService<string>(tessely, url, 'navigator.permissions.query({ name: "camera" }).then(status => status.state)');
-	const remember = (permissions: Record<string, boolean>) => tessely.app.evaluate(({ app: electronApp }, permissions) => {
+	const camera = (url: string) => inService<string>(tesselium, url, 'navigator.permissions.query({ name: "camera" }).then(status => status.state)');
+	const remember = (permissions: Record<string, boolean>) => tesselium.app.evaluate(({ app: electronApp }, permissions) => {
 		const fs = process.getBuiltinModule('node:fs');
-		const file = electronApp.getPath('userData') + '/tessely.json';
+		const file = electronApp.getPath('userData') + '/tesselium.json';
 		fs.writeFileSync(file, JSON.stringify({ ...JSON.parse(fs.readFileSync(file, 'utf8')), permissions }));
 	}, permissions);
 	expect(await camera(serviceUrl())).toBe('granted');
@@ -129,7 +129,7 @@ test('tells a page the camera is refused only once the user refused it, since a 
 
 test('opens a link to another site in a window of the app that shares the service\'s session', async () => {
 	await inFixture('document.getElementById("elsewhere").click()');
-	const sessions = () => tessely.app.evaluate(({ BrowserWindow, webContents }, url) => {
+	const sessions = () => tesselium.app.evaluate(({ BrowserWindow, webContents }, url) => {
 		const auxiliary = BrowserWindow.getAllWindows().find(window => window.webContents.getURL().endsWith('/away.html'));
 		const service = webContents.getAllWebContents().find(contents => contents.getURL() === url);
 		return { auxiliary: auxiliary?.webContents.session.storagePath, service: service?.session.storagePath };
@@ -137,12 +137,12 @@ test('opens a link to another site in a window of the app that shares the servic
 	await expect.poll(async () => (await sessions()).auxiliary).toBeTruthy();
 	const { auxiliary, service } = await sessions();
 	expect(auxiliary).toBe(service);
-	await tessely.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(window => window.webContents.getURL().endsWith('/away.html'))?.close());
+	await tesselium.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(window => window.webContents.getURL().endsWith('/away.html'))?.close());
 });
 
 const ctrlClick = async (id: string) => {
 	const { x, y } = await inFixture<{ x: number; y: number }>(`(({ x, y }) => ({ x: x + 5, y: y + 5 }))(document.getElementById(${JSON.stringify(id)}).getBoundingClientRect())`);
-	await tessely.app.evaluate(({ webContents }, { url, x, y }) => {
+	await tesselium.app.evaluate(({ webContents }, { url, x, y }) => {
 		const contents = webContents.getAllWebContents().find(candidate => candidate.getURL() === url);
 		const [keyCode, modifier] = process.platform === 'darwin' ? ['Meta', 'meta'] as const : ['Control', 'control'] as const;
 		const modifiers = [modifier];
@@ -154,11 +154,11 @@ const ctrlClick = async (id: string) => {
 	}, { url: serviceUrl(), x, y });
 };
 
-const openedInTheBrowser = () => tessely.app.evaluate(() => (globalThis as { opened?: string[] }).opened);
+const openedInTheBrowser = () => tesselium.app.evaluate(() => (globalThis as { opened?: string[] }).opened);
 
 test.describe('links clicked with Ctrl, or ⌘ on a Mac', () => {
 	test.beforeAll(async () => {
-		await tessely.app.evaluate(({ shell }) => {
+		await tesselium.app.evaluate(({ shell }) => {
 			const opened: string[] = [];
 			(globalThis as { opened?: string[] }).opened = opened;
 			shell.openExternal = async url => { opened.push(url); };
@@ -168,50 +168,50 @@ test.describe('links clicked with Ctrl, or ⌘ on a Mac', () => {
 	test('open in the browser, though another service owns their site', async () => {
 		await ctrlClick('elsewhere');
 		await expect.poll(openedInTheBrowser).toContain(at('127.0.0.1', '/away.html'));
-		expect(await tessely.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
+		expect(await tesselium.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
 		expect((await list()).find(service => service.active)?.id).toBe('1');
 	});
 
 	test('open in the browser when the page opens them a while after the click, as Meet does', async () => {
 		await ctrlClick('later');
 		await expect.poll(openedInTheBrowser).toContain(at('127.0.0.1', '/away.html?later'));
-		expect(await tessely.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
+		expect(await tesselium.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
 	});
 });
 
 test('hands a sign-in that left the service back to the service\'s own page, and closes its window', async () => {
 	await inFixture(`window.open(${JSON.stringify(at('localhost', '/away.html'))}), null`);
-	await expect.poll(() => tessely.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().some(window => window.webContents.getURL().includes('localhost')))).toBe(true);
+	await expect.poll(() => tesselium.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().some(window => window.webContents.getURL().includes('localhost')))).toBe(true);
 	const back = serviceUrl() + '?signed-in=1';
-	await tessely.app.evaluate(({ BrowserWindow }, back) => {
+	await tesselium.app.evaluate(({ BrowserWindow }, back) => {
 		const auxiliary = BrowserWindow.getAllWindows().find(window => window.webContents.getURL().includes('localhost'));
 		auxiliary?.webContents.executeJavaScript(`location.href = ${JSON.stringify(back)}`);
 	}, back);
-	await expect.poll(() => tessely.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
-	await expect.poll(() => tessely.app.evaluate(({ webContents }) => webContents.getAllWebContents().some(contents => contents.getURL().endsWith('?signed-in=1')))).toBe(true);
+	await expect.poll(() => tesselium.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
+	await expect.poll(() => tesselium.app.evaluate(({ webContents }) => webContents.getAllWebContents().some(contents => contents.getURL().endsWith('?signed-in=1')))).toBe(true);
 });
 
 test('goes back in the service with Alt and the left arrow, or Command and the bracket on a Mac', async () => {
 	// the second service already sits on away.html, so this one goes to an address of its own
 	const away = at('127.0.0.1', '/away.html?from=first-service');
 	await inFixture(`location.href = ${JSON.stringify(away)}`);
-	const loadedAway = () => tessely.app.evaluate(({ webContents }, away) => webContents.getAllWebContents().some(contents => contents.getURL() === away && !contents.isLoading()), away);
+	const loadedAway = () => tesselium.app.evaluate(({ webContents }, away) => webContents.getAllWebContents().some(contents => contents.getURL() === away && !contents.isLoading()), away);
 	await expect.poll(loadedAway).toBe(true);
-	await tessely.app.evaluate(({ webContents }, away) => {
+	await tesselium.app.evaluate(({ webContents }, away) => {
 		const contents = webContents.getAllWebContents().find(candidate => candidate.getURL() === away);
 		const [keyCode, modifier] = process.platform === 'darwin' ? ['[', 'meta'] as const : ['Left', 'alt'] as const;
 		contents?.sendInputEvent({ type: 'keyDown', keyCode, modifiers: [modifier] });
 		contents?.sendInputEvent({ type: 'keyUp', keyCode, modifiers: [modifier] });
 	}, away);
-	await expect.poll(() => tessely.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL().startsWith(url)), serviceUrl())).toBe(true);
+	await expect.poll(() => tesselium.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL().startsWith(url)), serviceUrl())).toBe(true);
 });
 
 test('hands a sign-in back to the address the service was added with, though its page sits on another site', async () => {
-	let other: Tessely | undefined;
+	let other: Tesselium | undefined;
 	try {
 		// signed out, the service's address sends it elsewhere, as chat.google.com does to workspace.google.com
 		const address = at('localhost', '/go?to=' + encodeURIComponent(at('127.0.0.1', '/away.html?product-page')));
-		other = await launchTessely({ store: { services: [serviceRecord('1', address)], activeServiceId: '1' } });
+		other = await launchTesselium({ store: { services: [serviceRecord('1', address)], activeServiceId: '1' } });
 		const app = other;
 		const onPage = (prefix: string) => app.app.evaluate(({ webContents }, prefix) => webContents.getAllWebContents().some(contents => contents.getURL().startsWith(prefix)), prefix);
 		await expect.poll(() => onPage(at('127.0.0.1', '/away.html?product-page'))).toBe(true);
@@ -226,14 +226,14 @@ test('hands a sign-in back to the address the service was added with, though its
 		await expect.poll(() => app.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
 		await expect.poll(() => onPage(at('localhost', '/service.html?signed-in'))).toBe(true);
 	} finally {
-		await closeTessely(other);
+		await closeTesselium(other);
 	}
 });
 
 test('opens a link to another service\'s site in that service, showing its workspace, not in a window', async () => {
-	let other: Tessely | undefined;
+	let other: Tesselium | undefined;
 	try {
-		other = await launchTessely({
+		other = await launchTesselium({
 			store: {
 				services: [
 					serviceRecord('1', at('127.0.0.1', '/service.html'), { workspace: 'here' }),
@@ -249,33 +249,33 @@ test('opens a link to another service\'s site in that service, showing its works
 		await expect.poll(() => app.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL() === url && !contents.isLoading()), at('127.0.0.1', '/service.html'))).toBe(true);
 		await inService(app, at('127.0.0.1', '/service.html'), `window.open(${JSON.stringify(meeting)}), null`);
 		await expect.poll(() => app.app.evaluate(({ webContents }, meeting) => webContents.getAllWebContents().some(contents => contents.getURL() === meeting), meeting)).toBe(true);
-		const active = await app.window.evaluate(() => window.tessely.invoke('services:list')) as ServiceState[];
+		const active = await app.window.evaluate(() => window.tesselium.invoke('services:list')) as ServiceState[];
 		expect(active.find(service => service.active)?.id).toBe('2');
-		expect(await app.window.evaluate(() => window.tessely.invoke('app:state').then(state => (state as { activeWorkspace: string }).activeWorkspace))).toBe('elsewhere');
+		expect(await app.window.evaluate(() => window.tesselium.invoke('app:state').then(state => (state as { activeWorkspace: string }).activeWorkspace))).toBe('elsewhere');
 		expect(await app.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
 	} finally {
-		await closeTessely(other);
+		await closeTesselium(other);
 	}
 });
 
 test('keeps running when a removed service\'s page asks for something after it is gone', async () => {
-	let other: Tessely | undefined;
+	let other: Tesselium | undefined;
 	try {
-		other = await launchTessely({ store: { services: [serviceRecord('3', at('127.0.0.1', '/service.html'))], activeServiceId: '3' } });
+		other = await launchTesselium({ store: { services: [serviceRecord('3', at('127.0.0.1', '/service.html'))], activeServiceId: '3' } });
 		const app = other;
 		await expect.poll(() => app.app.evaluate(({ webContents }, url) => webContents.getAllWebContents().some(contents => contents.getURL() === url), at('127.0.0.1', '/service.html'))).toBe(true);
-		await expect.poll(async () => ((await app.window.evaluate(() => window.tessely.invoke('services:list'))) as ServiceState[])[0]?.favicon).toBeTruthy();
+		await expect.poll(async () => ((await app.window.evaluate(() => window.tesselium.invoke('services:list'))) as ServiceState[])[0]?.favicon).toBeTruthy();
 		// the store reads its file on every get, so this is the service gone while its page lives on
 		await app.app.evaluate(({ app: electronApp }) => {
 			const fs = process.getBuiltinModule('node:fs');
-			const file = electronApp.getPath('userData') + '/tessely.json';
+			const file = electronApp.getPath('userData') + '/tesselium.json';
 			const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
 			fs.writeFileSync(file, JSON.stringify({ ...saved, services: [] }));
 		});
 		expect(await inService<string>(app, at('127.0.0.1', '/service.html'), 'navigator.permissions.query({ name: "camera" }).then(status => status.state)')).toBe('denied');
-		expect(await inService<boolean>(app, at('127.0.0.1', '/service.html'), 'window.tesselyService.mayNotify()')).toBe(false);
+		expect(await inService<boolean>(app, at('127.0.0.1', '/service.html'), 'window.tesseliumService.mayNotify()')).toBe(false);
 		expect(await app.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1);
 	} finally {
-		await closeTessely(other);
+		await closeTesselium(other);
 	}
 });

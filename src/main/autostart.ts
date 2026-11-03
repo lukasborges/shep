@@ -12,8 +12,8 @@ export function startWithSystem(on: boolean, minimized: boolean): void {
 		return;
 	}
 	const path = process.env.APPIMAGE ?? process.execPath;
-	// Shep's entry, from before the rename, would start the old executable as well.
-	new AutoLaunch({ name: 'Shep', path }).disable().catch(() => {});
-	const launcher = new AutoLaunch({ name: 'Tessely', path, isHidden: minimized });
+	// The entries of the app's earlier names would start the old executable as well.
+	for ( const earlierName of ['Shep', 'Tessely'] ) new AutoLaunch({ name: earlierName, path }).disable().catch(() => {});
+	const launcher = new AutoLaunch({ name: 'Tesselium', path, isHidden: minimized });
 	(on ? launcher.enable() : launcher.disable()).catch(() => {});
 }

@@ -1,3 +1,3 @@
 export function withoutAppTokens(userAgent: string): string {
-	return userAgent.replace(/\s(Tessely|Electron)\/\S+/g, '');
+	return userAgent.replace(/\s(Tesselium|Electron)\/\S+/g, '');
 }

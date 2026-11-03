@@ -1,6 +1,6 @@
 # Contributing
 
-Tessely has one maintainer, who commits to `main`. A pull request from a branch is welcome; so is an issue that says what happened, on which distribution and desktop, and, for a service that misbehaves, which address you added.
+Tesselium has one maintainer, who commits to `main`. A pull request from a branch is welcome; so is an issue that says what happened, on which distribution and desktop, and, for a service that misbehaves, which address you added.
 
 ## Running it
 
@@ -16,7 +16,7 @@ A change to the packaging or to anything the main process asks the system for sh
 
 ## The rule for services
 
-Tessely has no code for any one service, and a change must not add any. Every service is a web address, in the session the services share or in one of its own: its icon is its favicon, its count is its title, its links stay in the app. When a site does not work, the fix is to the rule every site goes through, with a test that shows the rule on a page of the suite's own, in `tests/e2e/fixtures`. A host name in the source is the sign of a special case.
+Tesselium has no code for any one service, and a change must not add any. Every service is a web address, in the session the services share or in one of its own: its icon is its favicon, its count is its title, its links stay in the app. When a site does not work, the fix is to the rule every site goes through, with a test that shows the rule on a page of the suite's own, in `tests/e2e/fixtures`. A host name in the source is the sign of a special case.
 
 ## Tests
 

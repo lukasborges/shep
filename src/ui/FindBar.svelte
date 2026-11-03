@@ -3,7 +3,7 @@
 	import type { AppState } from '../shared/channels.ts';
 	import Icon from './Icon.svelte';
 
-	let language = $state(window.tessely.locale);
+	let language = $state(window.tesselium.locale);
 	const messages = $derived(messagesFor(language));
 	let query = $state('');
 	let found = $state<{ active: number; matches: number } | null>(null);
@@ -11,23 +11,23 @@
 	const hasMatches = $derived(Boolean(query && found?.matches));
 	const nothingFound = $derived(Boolean(query && found && !found.matches));
 
-	window.tessely.invoke('app:state').then(state => { language = (state as AppState).language; });
-	window.tessely.on('app:state', state => { language = (state as AppState).language; });
-	window.tessely.on('find:open', () => {
+	window.tesselium.invoke('app:state').then(state => { language = (state as AppState).language; });
+	window.tesselium.on('app:state', state => { language = (state as AppState).language; });
+	window.tesselium.on('find:open', () => {
 		field?.focus();
 		field?.select();
 		if ( query ) search();
 	});
-	window.tessely.on('find:found', (active, matches) => { found = { active: Number(active), matches: Number(matches) }; });
+	window.tesselium.on('find:found', (active, matches) => { found = { active: Number(active), matches: Number(matches) }; });
 
 	function search(forward = true) {
 		if ( !query ) found = null;
-		window.tessely.invoke('find:search', query, forward);
+		window.tesselium.invoke('find:search', query, forward);
 	}
 
 	function close() {
 		found = null;
-		window.tessely.invoke('find:close');
+		window.tesselium.invoke('find:close');
 	}
 
 	function searchOnEnter(event: KeyboardEvent) {
