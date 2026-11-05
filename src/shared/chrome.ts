@@ -1,4 +1,4 @@
-export const TITLE_BAR_HEIGHT = 32;
+export const TITLE_BAR_HEIGHT = 40;
 export const RAIL_WIDTH = 68;
 export const PAGE_CORNER_RADIUS = 8;
 

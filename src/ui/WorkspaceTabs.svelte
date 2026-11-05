@@ -122,7 +122,7 @@
 
 {#snippet avatar(tab: Tab)}
 	{#if tab.workspace}
-		<WorkspaceAvatar name={tab.workspace.name} hue={tab.workspace.hue} icon={tab.workspace.icon ?? null} size={20} onChrome={!tab.selected} />
+		<WorkspaceAvatar name={tab.workspace.name} hue={tab.workspace.hue} icon={tab.workspace.icon ?? null} size={22} onChrome={!tab.selected} />
 	{:else}
 		<span class="all">
 			<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
@@ -223,7 +223,7 @@
 		align-items: center;
 		gap: 7px;
 		flex: 0 0 auto;
-		height: 24px;
+		height: 30px;
 		margin-bottom: 4px;
 		padding: 0 10px 0 4px;
 		box-sizing: border-box;
@@ -241,7 +241,7 @@
 	}
 
 	.tab.selected {
-		height: 28px;
+		height: 34px;
 		margin-bottom: 0;
 		border-radius: 7px 7px 0 0;
 		background-color: var(--rx-surface);
@@ -263,7 +263,7 @@
 		field-sizing: content;
 		min-width: 40px;
 		max-width: 180px;
-		height: 20px;
+		height: 22px;
 		padding: 0 4px;
 		border: 0;
 		border-radius: 4px;
@@ -288,9 +288,9 @@
 	.all {
 		display: grid;
 		place-items: center;
-		flex: 0 0 20px;
-		width: 20px;
-		height: 20px;
+		flex: 0 0 22px;
+		width: 22px;
+		height: 22px;
 		border-radius: 27%;
 		background-color: var(--rx-hover-on-chrome);
 		fill: currentColor;
@@ -345,8 +345,8 @@
 		place-items: center;
 		flex: 0 0 auto;
 		align-self: center;
-		width: 28px;
-		height: 24px;
+		width: 32px;
+		height: 32px;
 		border: 0;
 		border-radius: var(--rx-radius);
 		background: none;

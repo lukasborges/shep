@@ -74,8 +74,8 @@
 	button {
 		display: grid;
 		place-items: center;
-		width: 28px;
-		height: 24px;
+		width: 32px;
+		height: 32px;
 		border: 0;
 		border-radius: var(--rx-radius);
 		background: none;
