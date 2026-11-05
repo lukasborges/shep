@@ -207,6 +207,7 @@
 	}
 
 	.tabs {
+		--selected-tab-reach-into-page: 4px;
 		display: flex;
 		align-items: flex-end;
 		gap: 2px;
@@ -224,7 +225,7 @@
 		gap: 7px;
 		flex: 0 0 auto;
 		height: 30px;
-		margin-bottom: 4px;
+		margin-bottom: var(--selected-tab-reach-into-page);
 		padding: 0 10px 0 4px;
 		box-sizing: border-box;
 		border: 0;
@@ -241,8 +242,9 @@
 	}
 
 	.tab.selected {
-		height: 34px;
+		height: calc(30px + var(--selected-tab-reach-into-page));
 		margin-bottom: 0;
+		padding-bottom: var(--selected-tab-reach-into-page);
 		border-radius: 7px 7px 0 0;
 		background-color: var(--rx-surface);
 		color: var(--rx-ink);
@@ -275,7 +277,7 @@
 
 	.tab.icon-only {
 		gap: 3px;
-		padding: 0 4px;
+		padding-inline: 4px;
 	}
 
 	.tab.overflow {
